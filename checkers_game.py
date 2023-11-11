@@ -59,10 +59,20 @@ class Board:
         return board
 
     def print_board(self):
-        # iterate through each row on the board
-        for row in self.state:
-            # for each row construct a string representing the row
-            print(' '.join([str(piece) if piece is not None else '-' for piece in row]))
+        # display column headers with padding to align it to cells
+        print("   " + "  ".join([f"{i}" for i in range(8)]))
+
+        # iterate through each row
+        for row_idx, row in enumerate(self.state):
+            # start each row with index and space for alignment
+            row_str = f"{row_idx} "
+
+            # for each row construct a string
+            for piece in row:
+                cell = str(piece) if piece is not None else "-"
+                row_str += f"{cell:^3}" # center each cell within a width of 3 char
+                
+            print(row_str)
 
     def get_legal_moves(self, player=None):
         #if no player specified, use the current player
@@ -114,7 +124,7 @@ class Board:
                     # if landing square is within the board and empty
                     if self.is_move_within_board(jump_row, jump_col) and self.state[jump_row][jump_col] is None:
                         # add legal jump move
-                        jump_moves.append(((row, col, jump_row, jump_col), 'jump'))
+                        moves.append(((row, col, jump_row, jump_col), 'jump'))
 
             # check for regular moves
             elif self.is_move_within_board(adj_row, adj_col) and self.state[adj_row][adj_col] is None:
@@ -128,19 +138,43 @@ class Board:
 
     def make_move(self, move):
         #update the board state based on the given move
+        start_row, start_col, end_row, end_col = move
 
-        #make sure move is legal before updating a state
-        if self.is_legal_move(move):
-            #update the state based on the move
-            pass
+        # check if move is legal
+        if move in self.get_legal_moves():
+            # move the piece
+            piece = self.state[start_row][start_col]
+            self.state[end_row][end_col] = piece
+            self.state[start_row][start_col] = None
+
+            # check if the move is a jump
+            capture_made = False 
+            if abs(start_row - end_row) == 2:
+                # determine the position of the captured piece
+                middle_row, middle_col = (start_row + end_row) // 2, (start_col + end_col) // 2
+                # remove the captured piece
+                self.state[middle_row][middle_col] = None
+                capture_made = True
+            
+            # check if piece has to be promoted to a king
+            if (end_row == 0 and piece.player == 2) or (end_row == 7 and piece.player == 1):
+                piece.make_king()
+            
+            # check for additional captures
+            if capture_made:
+                additional_captures = self.get_piece_legal_moves(piece, end_row, end_col)
+                if any(move_type == 'jump' for _, move_type in additional_captures):
+                    return #do not switch player turn since another jump is possible
+                # no additional jumps possible so switch turn
+            self.switch_player_turn()
+        
         else:
-            #handle illegal move
-            pass
+            print('Illegal move')
     
     def switch_player_turn(self):
         #switch turn between players
         self.current_player = 3 - self.current_player
     
-board_object = Board()
+checkers_game = Board()
 
 
