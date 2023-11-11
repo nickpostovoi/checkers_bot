@@ -64,13 +64,67 @@ class Board:
             # for each row construct a string representing the row
             print(' '.join([str(piece) if piece is not None else '-' for piece in row]))
 
-    def get_legal_moves(self, player):
-        #return a list of legal moves for a player
-        pass
+    def get_legal_moves(self, player=None):
+        #if no player specified, use the current player
+        if player is None:
+            player = self.current_player
 
-    def is_legal_move(self, move):
-        #check of the given move is legal for the current player
-        pass
+        #return a list of legal moves for a player
+        legal_moves = []
+
+        # iterate over the board to find all pieces of the given player
+        for row_index, row in enumerate(self.state):
+            for col_index, piece in enumerate(row):
+                if piece and piece.player == player:
+                    # compute legal moves for a piece
+                    piece_legal_moves = self.get_piece_legal_moves(piece, row_index, col_index)
+                    # add legal moves for this piece to all legal moves
+                    legal_moves.extend(piece_legal_moves)
+
+        #check if there are any jump moves, if yes then filter out regular ones
+        if any(move_type == 'jump' for _, move_type in legal_moves):
+            return [move for move, move_type in legal_moves if move_type == 'jump']
+        
+        return [move for move, move_type in legal_moves if move_type == 'regular']
+
+    def get_piece_legal_moves(self, piece, row, col):
+        # returns a list of legal moves for a specific piece
+        moves = []
+
+        # determine move directions based on piece type
+        if piece.king:
+            # diagonal in all directions
+            move_directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        else:
+            # diagonal in one direction
+            move_directions = [(1, -1), (1, 1)] if piece.player == 1 else [(-1, -1), (-1, 1)]
+
+        # check for moves and jump moves in each direction
+        for d_row, d_col in move_directions:
+            # define the position of the adjacent square in the direction of a movement
+            adj_row, adj_col = row + d_row, col + d_col
+
+            # check for jump moves
+            # if move the adjacent square is within the board and not empty
+            if self.is_move_within_board(adj_row, adj_col) and self.state[adj_row][adj_col] is not None:
+                # if piece on the adjacent square belongs to the other player
+                if self.state[adj_row][adj_col].player != piece.player:
+                    # define potential jump landing square
+                    jump_row, jump_col = adj_row + d_row, adj_col + d_col
+                    # if landing square is within the board and empty
+                    if self.is_move_within_board(jump_row, jump_col) and self.state[jump_row][jump_col] is None:
+                        # add legal jump move
+                        jump_moves.append(((row, col, jump_row, jump_col), 'jump'))
+
+            # check for regular moves
+            elif self.is_move_within_board(adj_row, adj_col) and self.state[adj_row][adj_col] is None:
+                moves.append(((row, col, adj_row, adj_col), 'regular'))
+
+        return moves
+            
+    def is_move_within_board(self, row, col):
+        # check if the given square is within the board
+        return 0 <= row < 8 and 0 <= col < 8
 
     def make_move(self, move):
         #update the board state based on the given move
