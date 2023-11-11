@@ -9,4 +9,7 @@
   - Enhanced the `Board` class:
     - Added `get_legal_moves` method: This function is pivotal in identifying all the permissible moves for the current player or a specified player. It first identifies all the pieces belonging to the player and then computes the legal moves for each piece, including regular and jump moves.
     - Introduced `get_piece_legal_moves` method: A specialized method for calculating the legal moves for a specific piece, considering its type (king or regular) and position. It accounts for both regular and jump moves, adhering to checkers' rules.
-    - Implemented `is_move_within_board` method: A utility function to verify if a move stays within the boundaries of the checkers board, which is essential for determining the validity of the moves. 
+    - Implemented `is_move_within_board` method: A utility function to verify if a move stays within the boundaries of the checkers board, which is essential for determining the validity of the moves.
+    - Updated `print_board` method: Enhanced the visual representation of the board. This method now prints the board with clearer formatting, making it more user-friendly and easier to interpret.
+    - Developed `make_move` function: This key method updates the board state based on the given move. It includes logic to handle captures, multi-jumps, and piece promotion to king.
+
