@@ -23,8 +23,7 @@ class Board:
         # initialize the piece counts
         self.pieces_player_1 = 12
         self.pieces_player_2 = 12
-        # initialize variables for rewards
-        self.move_count = {1: 0, 2: 0}
+        # initialize variable for storing a reward count
         self.reward_count = {1: 0, 2: 0}
 
     def initialize_board(self):
@@ -146,6 +145,9 @@ class Board:
         #update the board state based on the given move
         start_row, start_col, end_row, end_col = move
 
+        # initialize the reward counter for this move
+        reward = 0
+
         # check if move is legal
         if move in self.get_legal_moves():
             # move the piece
@@ -168,21 +170,48 @@ class Board:
                 
                 self.state[middle_row][middle_col] = None
                 capture_made = True
+
+                # assign a reward for capturing an opponent piece
+                reward += 10
+                print(f'Reward for capturing an opponent piece applied to player {self.current_player}')
             
             # check if piece has to be promoted to a king
             if (end_row == 0 and piece.player == 2) or (end_row == 7 and piece.player == 1):
                 piece.make_king()
-            
+
+                #assign a reward for promoting to a king
+                reward += 5
+                print(f'Reward for promoting to a king applied to player {self.current_player}')
+
             # check for additional captures
             if capture_made:
                 additional_captures = self.get_piece_legal_moves(piece, end_row, end_col)
                 if any(move_type == 'jump' for _, move_type in additional_captures):
+                    # update the reward count
+                    self.reward_count[self.current_player] += reward
                     return # do not switch player turn since another jump is possible
                 # no additional jumps possible so switch turn
-            self.switch_player_turn()
+
+            # small penalty for a normal move without immediate benefit
+            if reward == 0:
+                reward -= 0.1
+                print(f'Small penalty for regular move applied to player {self.current_player}')
+
+            # update the reward count
+            self.reward_count[self.current_player] += reward
+
+            # check if game is over after each move
+            if self.is_game_over():
+                # update rewards based on game over conditions
+                return
+            else: 
+                self.switch_player_turn()
         
         else:
             print('Illegal move')
+
+            # penalty for an illegal move
+            self.reward_count[self.current_player] -= 100
     
     def switch_player_turn(self):
         # switch turn between players
@@ -190,17 +219,42 @@ class Board:
 
     def is_game_over(self):
 
-        # if one of the players run out of the pieces game is over
-        if self.pieces_player_1 == 0 or self.pieces_player_2 == 0:
+        # check if one of the players won and assign rewards/penalties
+        if self.pieces_player_1 == 0:
+            self.reward_count[2] += 50
+            self.reward_count[1] -= 50
+            return True
+        elif self.pieces_player_2 == 0:
+            self.reward_count[1] += 50
+            self.reward_count[2] -= 50
+            return True
+
+        # check for stalemate and apply penalty
+        if not self.get_legal_moves():
+            self.reward_count[1] -= 5
+            self.reward_count[2] -= 5
             return True
         
-        # if the current player has no moves left then game is over
-        if not self.get_legal_moves():
-            return True
-    
-checkers_game = Board()
+        return False
 
-checkers_game.print_board()
-checkers_game.get_legal_moves()
-checkers_game.get_reward(player=checkers_game.current_player)
-checkers_game.make_move()
+# try the game with random turns
+import random
+board = Board()
+
+while not board.is_game_over():
+    legal_moves = board.get_legal_moves()
+
+    if not legal_moves:
+        break
+
+    move = random.choice(legal_moves)
+    board.make_move(move)
+    board.print_board()
+    print("Reward Count:", board.reward_count)
+    print("Player 1 pieces: ", board.pieces_player_1)
+    print("Player 2 pieces: ", board.pieces_player_2)
+    print("\n-------------------------------------------\n")
+
+print("Final Board State:")
+board.print_board()
+print("Final Reward Count:", board.reward_count)
