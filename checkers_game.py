@@ -79,6 +79,29 @@ class Board:
                 
             print(row_str)
 
+    def get_state_representation(self):
+        # flatten the board into a 1D array
+        flat_state = []
+
+        # 0 for an empty square
+        # 1 for a player 1 piece
+        # 2 for a player 2 piece
+        # 3 for a player 1 king
+        # 4 for a player 2 king
+        for row in self.state:
+            for piece in row:
+                if piece is None:
+                    flat_state.append(0)
+                elif piece.player == 1:
+                    flat_state.append(3 if piece.king else 1)
+                elif piece.player == 2:
+                    flat_state.append(4 if piece.king else 2)
+        
+        # add the current player turn
+        flat_state.append(1 if self.current_player == 1 else -1)
+        
+        return flat_state
+
     def get_legal_moves(self, player=None):
         #if no player specified, use the current player
         if player is None:
