@@ -218,34 +218,39 @@ class Board:
         self.current_player = 3 - self.current_player
 
     def is_game_over(self):
-
         # check if one of the players won and assign rewards/penalties
         if self.pieces_player_1 == 0:
             self.reward_count[2] += 50
             self.reward_count[1] -= 50
+            print("Player 2 wins")
             return True
         elif self.pieces_player_2 == 0:
             self.reward_count[1] += 50
             self.reward_count[2] -= 50
+            print("Player 1 wins")
             return True
 
         # check for stalemate and apply penalty
         if not self.get_legal_moves():
             self.reward_count[1] -= 5
             self.reward_count[2] -= 5
+            print("Stalemate")
             return True
         
         return False
 
 # try the game with random turns
 import random
+import time
+
+#create a board
 board = Board()
+
+#start a timer
+start_time = time.time()
 
 while not board.is_game_over():
     legal_moves = board.get_legal_moves()
-
-    if not legal_moves:
-        break
 
     move = random.choice(legal_moves)
     board.make_move(move)
@@ -255,6 +260,8 @@ while not board.is_game_over():
     print("Player 2 pieces: ", board.pieces_player_2)
     print("\n-------------------------------------------\n")
 
-print("Final Board State:")
-board.print_board()
-print("Final Reward Count:", board.reward_count)
+# end the timer
+end_time = time.time()
+# calculate time taken to play a game
+total_time = end_time - start_time
+print(f"Total time taken: {total_time:.2f} seconds")
