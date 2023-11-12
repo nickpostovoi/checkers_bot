@@ -16,10 +16,16 @@ class Piece:
 # defining the board class
 class Board:
     def __init__(self):
-        # initializing the board with pieces in their starting positions
+        # initialize the board with pieces in their starting positions
         self.state = self.initialize_board()
         # start with the player 1 (white)
         self.current_player = 1
+        # initialize the piece counts
+        self.pieces_player_1 = 12
+        self.pieces_player_2 = 12
+        # initialize variables for rewards
+        self.move_count = {1: 0, 2: 0}
+        self.reward_count = {1: 0, 2: 0}
 
     def initialize_board(self):
         # initialize an empty list to represent the board
@@ -152,7 +158,14 @@ class Board:
             if abs(start_row - end_row) == 2:
                 # determine the position of the captured piece
                 middle_row, middle_col = (start_row + end_row) // 2, (start_col + end_col) // 2
-                # remove the captured piece
+                
+                # remove the captured piece and update the piece counts
+                captured_piece = self.state[middle_row][middle_col]
+                if captured_piece.player == 1:
+                    self.pieces_player_1 -= 1
+                elif captured_piece.player == 2:
+                    self.pieces_player_2 -= 1
+                
                 self.state[middle_row][middle_col] = None
                 capture_made = True
             
@@ -164,7 +177,7 @@ class Board:
             if capture_made:
                 additional_captures = self.get_piece_legal_moves(piece, end_row, end_col)
                 if any(move_type == 'jump' for _, move_type in additional_captures):
-                    return #do not switch player turn since another jump is possible
+                    return # do not switch player turn since another jump is possible
                 # no additional jumps possible so switch turn
             self.switch_player_turn()
         
@@ -172,9 +185,22 @@ class Board:
             print('Illegal move')
     
     def switch_player_turn(self):
-        #switch turn between players
+        # switch turn between players
         self.current_player = 3 - self.current_player
+
+    def is_game_over(self):
+
+        # if one of the players run out of the pieces game is over
+        if self.pieces_player_1 == 0 or self.pieces_player_2 == 0:
+            return True
+        
+        # if the current player has no moves left then game is over
+        if not self.get_legal_moves():
+            return True
     
 checkers_game = Board()
 
-
+checkers_game.print_board()
+checkers_game.get_legal_moves()
+checkers_game.get_reward(player=checkers_game.current_player)
+checkers_game.make_move()
