@@ -18,7 +18,7 @@ class DQN_agent:
         # possible actions from get_legal_moves()
         self.action_size = action_size
         # a double-ended queue to store experiences
-        self.memory = deque(maxlen=2000)
+        self.memory = deque(maxlen=100000)
         # discount rate (determines the importance of future rewards)
         # lower rate makes agent more short-sighted
         # higher rate makes agent value future rewards more significantly (far-sighted)
@@ -45,3 +45,13 @@ class DQN_agent:
             model.add(Dense(self.action_size, activation='linear'))
             model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
             return model
+        
+        def remember(self, state, action, reward, next_state, done):
+            #enables the agent to store experiences and learn from them effectively through experience replay
+            self.memory.append((
+                state, # current state of the environment before the agent takes an action 
+                action, # action taken by the agent in the current state
+                reward, # immediate reward received after taking the action
+                next_state, # state of the environment after the action is taken.
+                done # boolean indicating whether this state-action pair led to the end of an episode
+                ))
