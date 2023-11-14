@@ -196,7 +196,7 @@ class Board:
 
                 # assign a reward for capturing an opponent piece
                 reward += 10
-                print(f'Reward for capturing an opponent piece applied to player {self.current_player}')
+                # print(f'Reward for capturing an opponent piece applied to player {self.current_player}')
             
             # check if piece has to be promoted to a king
             if (end_row == 0 and piece.player == 2) or (end_row == 7 and piece.player == 1):
@@ -204,7 +204,7 @@ class Board:
 
                 #assign a reward for promoting to a king
                 reward += 5
-                print(f'Reward for promoting to a king applied to player {self.current_player}')
+                # print(f'Reward for promoting to a king applied to player {self.current_player}')
 
             # check for additional captures
             if capture_made:
@@ -218,7 +218,7 @@ class Board:
             # small penalty for a normal move without immediate benefit
             if reward == 0:
                 reward -= 0.1
-                print(f'Small penalty for regular move applied to player {self.current_player}')
+                # print(f'Small penalty for regular move applied to player {self.current_player}')
 
             # update the reward count
             self.reward_count[self.current_player] += reward
@@ -231,7 +231,7 @@ class Board:
                 self.switch_player_turn()
         
         else:
-            print('Illegal move')
+            # print('Illegal move')
 
             # penalty for an illegal move
             self.reward_count[self.current_player] -= 100
@@ -245,19 +245,19 @@ class Board:
         if self.pieces_player_1 == 0:
             self.reward_count[2] += 50
             self.reward_count[1] -= 50
-            print("Player 2 wins")
+            # print("Player 2 wins")
             return True
         elif self.pieces_player_2 == 0:
             self.reward_count[1] += 50
             self.reward_count[2] -= 50
-            print("Player 1 wins")
+            # print("Player 1 wins")
             return True
 
         # check for stalemate and apply penalty
         if not self.get_legal_moves():
             self.reward_count[1] -= 5
             self.reward_count[2] -= 5
-            print("Stalemate")
+            # print("Stalemate")
             return True
         
         return False

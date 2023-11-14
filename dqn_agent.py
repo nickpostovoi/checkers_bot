@@ -30,7 +30,7 @@ class DQN_agent:
         self.epsilon_min = 0.01
         # rate at which the epsilon value decreases over time
         self.epsilon_decay = 0.995
-        # rathe at which the weights in the neural network are adjusted during each training iteration
+        # rate at which the weights in the neural network are adjusted during each training iteration
         self.learning_rate = 0.001
         
         # initialize the model
@@ -55,3 +55,44 @@ class DQN_agent:
                 next_state, # state of the environment after the action is taken.
                 done # boolean indicating whether this state-action pair led to the end of an episode
                 ))
+        
+        # deciding which action the agent should take in a given state
+        def act(self, state):
+            # checks if the agent should take a random action based on the current value of exploration rate
+            if np.random.rand() <= self.epsilon:
+                return random.randrange(self.action_size)
+            # use the model to make a prediction
+            act_values = self.model.predict(state)
+            # return the action with the highest Q-value
+            return np.argmax(act_values[0])
+
+        # defining experience roleplay function (agent learns from a random sample of past experiences 
+        # avoiding the pitfalls of strongly correlated sequential experiences)
+        def replay(self, batch_size):
+            # randomly sample a minibatch of experiences from the memory
+            minibatch = random.sample(self.memory, batch_size)
+            # iterate through minibatch of experiences and calculate target Q-value for the action taken
+            for state, action, reward, next_state, done in minibatch:
+                # if the episode is done then target is simply the observed reward
+                target = reward
+                if not done:
+                    # if the episode is not done, the target Q-value is calculated using the Bellman equation
+                    target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0]))
+                # obtain the model prediction for the current state
+                target_f = self.model.predict(state)
+                # Q-value for the action taken is updated with the calculated target
+                target_f[0][action] = target
+                # the model is trained (updated) using this new target
+                # this training step adjusts the model's weights to better predict the target Q-values in the future
+                self.model.fit(state, target_f, epochs=1, verbose=0)
+            #  check if the exploration rate is greater than a minimum value
+            if self.epsilon > self.epsilon_min:
+                # decay the exploration rate
+                self.epsilon *= self.epsilon_decay
+        
+        def load(self, name):
+            self.model.load_weights(name)
+
+        def save(self, name):
+            # save the current weights of the neural network model to a file
+            self.model.save_weights(name)
