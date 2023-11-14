@@ -36,63 +36,70 @@ class DQN_agent:
         # initialize the model
         self.model = self._build_model()
 
-        def _build_model(self):
-            # compiles a neural net for DQ model
-            model = Sequential()
-            model.add(Dense(128, input_dim=self.state_size, activation='relu'))
-            model.add(Dense(256, activation='relu'))
-            model.add(Dense(64, activation='relu'))
-            model.add(Dense(self.action_size, activation='linear'))
-            model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
-            return model
-        
-        def remember(self, state, action, reward, next_state, done):
-            #enables the agent to store experiences and learn from them effectively through experience replay
-            self.memory.append((
-                state, # current state of the environment before the agent takes an action 
-                action, # action taken by the agent in the current state
-                reward, # immediate reward received after taking the action
-                next_state, # state of the environment after the action is taken.
-                done # boolean indicating whether this state-action pair led to the end of an episode
-                ))
-        
-        # deciding which action the agent should take in a given state
-        def act(self, state):
-            # checks if the agent should take a random action based on the current value of exploration rate
-            if np.random.rand() <= self.epsilon:
-                return random.randrange(self.action_size)
-            # use the model to make a prediction
-            act_values = self.model.predict(state)
-            # return the action with the highest Q-value
-            return np.argmax(act_values[0])
+    def _build_model(self):
+        # compiles a neural net for DQ model
+        model = Sequential()
+        model.add(Dense(128, input_dim=self.state_size, activation='relu'))
+        model.add(Dense(256, activation='relu'))
+        model.add(Dense(64, activation='relu'))
+        model.add(Dense(self.action_size, activation='linear'))
+        model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
+        return model
+    
+    def remember(self, state, action, reward, next_state, done):
+        #enables the agent to store experiences and learn from them effectively through experience replay
+        self.memory.append((
+            state, # current state of the environment before the agent takes an action 
+            action, # action taken by the agent in the current state
+            reward, # immediate reward received after taking the action
+            next_state, # state of the environment after the action is taken.
+            done # boolean indicating whether this state-action pair led to the end of an episode
+            ))
+    
+    # deciding which action the agent should take in a given state
+    def act(self, state):
+        # use the model to make a prediction
+        act_values = self.model.predict(state)
 
-        # defining experience roleplay function (agent learns from a random sample of past experiences 
-        # avoiding the pitfalls of strongly correlated sequential experiences)
-        def replay(self, batch_size):
-            # randomly sample a minibatch of experiences from the memory
-            minibatch = random.sample(self.memory, batch_size)
-            # iterate through minibatch of experiences and calculate target Q-value for the action taken
-            for state, action, reward, next_state, done in minibatch:
-                # if the episode is done then target is simply the observed reward
-                target = reward
-                if not done:
-                    # if the episode is not done, the target Q-value is calculated using the Bellman equation
-                    target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0]))
-                # obtain the model prediction for the current state
-                target_f = self.model.predict(state)
-                # Q-value for the action taken is updated with the calculated target
-                target_f[0][action] = target
-                # the model is trained (updated) using this new target
-                # this training step adjusts the model's weights to better predict the target Q-values in the future
-                self.model.fit(state, target_f, epochs=1, verbose=0)
-            #  check if the exploration rate is greater than a minimum value
-            if self.epsilon > self.epsilon_min:
-                # decay the exploration rate
-                self.epsilon *= self.epsilon_decay
-        
-        def load(self, name):
-            self.model.load_weights(name)
+        # masking out illegal moves (set the values of illegal actions to a large negative number making them unlikely to be selected)
+        mask = np.ones_like(act_values) * -1e5
+        for move in legal_moves:
+            mask[0][move] = 0
+        masked_act_values = act_values + mask
 
-        def save(self, name):
-            # save the current weights of the neural network model to a file
-            self.model.save_weights(name)
+        # checks if the agent should take a random action based on the current value of exploration rate
+        if np.random.rand() <= self.epsilon:
+            return random.randrange(self.action_size)
+        # return the action with the highest Q-value
+        return np.argmax(act_values[0])
+
+    # defining experience roleplay function (agent learns from a random sample of past experiences 
+    # avoiding the pitfalls of strongly correlated sequential experiences)
+    def replay(self, batch_size):
+        # randomly sample a minibatch of experiences from the memory
+        minibatch = random.sample(self.memory, batch_size)
+        # iterate through minibatch of experiences and calculate target Q-value for the action taken
+        for state, action, reward, next_state, done in minibatch:
+            # if the episode is done then target is simply the observed reward
+            target = reward
+            if not done:
+                # if the episode is not done, the target Q-value is calculated using the Bellman equation
+                target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0]))
+            # obtain the model prediction for the current state
+            target_f = self.model.predict(state)
+            # Q-value for the action taken is updated with the calculated target
+            target_f[0][action] = target
+            # the model is trained (updated) using this new target
+            # this training step adjusts the model's weights to better predict the target Q-values in the future
+            self.model.fit(state, target_f, epochs=1, verbose=0)
+        #  check if the exploration rate is greater than a minimum value
+        if self.epsilon > self.epsilon_min:
+            # decay the exploration rate
+            self.epsilon *= self.epsilon_decay
+    
+    def load(self, name):
+        self.model.load_weights(name)
+
+    def save(self, name):
+        # save the current weights of the neural network model to a file
+        self.model.save_weights(name)

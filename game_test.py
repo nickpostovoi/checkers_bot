@@ -2,7 +2,7 @@
 import random
 import time
 
-from checkers_game import Piece, Board
+from checkers_game_mirrored import Piece, Board
 
 #create a board
 board = Board()

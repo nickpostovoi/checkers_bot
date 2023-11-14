@@ -92,79 +92,59 @@ class Board:
         # 2 for a player 2 piece
         # 3 for a player 1 king
         # 4 for a player 2 king
-        
-        if player == 1:
-            for row in self.state:
-                for piece in row:
-                    if piece is None:
-                        flat_state.append(0)
-                    elif piece.player == 1:
-                        flat_state.append(3 if piece.king else 1)
-                    elif piece.player == 2:
-                        flat_state.append(4 if piece.king else 2)
-        else:
-            for row in reversed(self.state):
-                for piece in reversed(row):
-                    if piece is None:
-                        flat_state.append(0)
-                    elif piece.player == 1:
-                        flat_state.append(3 if piece.king else 1)
-                    elif piece.player == 2:
-                        flat_state.append(4 if piece.king else 2)
+        for row in self.state[::-1] if player == 2 else self.state:
+            for piece in row[::-1] if player == 2 else row:
+                if piece is None:
+                    flat_state.append(0)
+                elif piece.player == 1:
+                    flat_state.append(3 if piece.king else 1)
+                elif piece.player == 2:
+                    flat_state.append(4 if piece.king else 2)
         
         # add the current player turn
         flat_state.append(1 if self.current_player == 1 else -1)
         
         return flat_state
 
-    def get_state(self):
-        state = []
-        for row in self.state:
-            row = list(row)
-            state.append(row)
-        return state
-    
-    def get_mirrored_state(self):
-        mirrored_state = []
-        for row in reversed(self.state):
-            mirrored_row = list(reversed(row))
-            mirrored_state.append(mirrored_row)
-        return mirrored_state
-
     def get_legal_moves(self, player=None):
-        #if no player specified, use the current player
+        # if no player specified, use the current player
         if player is None:
             player = self.current_player
 
-        #return a list of legal moves for a player
+        # return a list of legal moves for a player
         legal_moves = []
+        # mirror the orientation of the board for player 2
+        state = self.state[::-1] if player == 2 else self.state
 
         # iterate over the board to find all pieces of the given player
-        for row_index, row in enumerate(self.state):
+        for row_index, row in enumerate(state):
             for col_index, piece in enumerate(row):
                 if piece and piece.player == player:
                     # compute legal moves for a piece
-                    piece_legal_moves = self.get_piece_legal_moves(piece, row_index, col_index)
+                    piece_legal_moves = self.get_piece_legal_moves(piece, row_index, col_index, player)
                     # add legal moves for this piece to all legal moves
                     legal_moves.extend(piece_legal_moves)
 
-        #check if there are any jump moves, if yes then filter out regular ones
+        # check if there are any jump moves, if yes then filter out regular ones
         if any(move_type == 'jump' for _, move_type in legal_moves):
             return [move for move, move_type in legal_moves if move_type == 'jump']
         
         return [move for move, move_type in legal_moves if move_type == 'regular']
 
-    def get_piece_legal_moves(self, piece, row, col):
+    def get_piece_legal_moves(self, piece, row, col, player):
         # returns a list of legal moves for a specific piece
         moves = []
 
+        # mirror the orientation of the board for player 2
+        state = self.state[::-1] if player == 2 else self.state
+        
         # determine move directions based on piece type
         if piece.king:
             # diagonal in all directions
             move_directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
         else:
             # diagonal in one direction
-            move_directions = [(1, -1), (1, 1)] if piece.player == 1 else [(-1, -1), (-1, 1)]
+            move_directions = [(1, -1), (1, 1)]
 
         # check for moves and jump moves in each direction
         for d_row, d_col in move_directions:
@@ -173,18 +153,18 @@ class Board:
 
             # check for jump moves
             # if move the adjacent square is within the board and not empty
-            if self.is_move_within_board(adj_row, adj_col) and self.state[adj_row][adj_col] is not None:
+            if self.is_move_within_board(adj_row, adj_col) and state[adj_row][adj_col] is not None:
                 # if piece on the adjacent square belongs to the other player
-                if self.state[adj_row][adj_col].player != piece.player:
+                if state[adj_row][adj_col].player != piece.player:
                     # define potential jump landing square
                     jump_row, jump_col = adj_row + d_row, adj_col + d_col
                     # if landing square is within the board and empty
-                    if self.is_move_within_board(jump_row, jump_col) and self.state[jump_row][jump_col] is None:
+                    if self.is_move_within_board(jump_row, jump_col) and state[jump_row][jump_col] is None:
                         # add legal jump move
                         moves.append(((row, col, jump_row, jump_col), 'jump'))
 
             # check for regular moves
-            elif self.is_move_within_board(adj_row, adj_col) and self.state[adj_row][adj_col] is None:
+            elif self.is_move_within_board(adj_row, adj_col) and state[adj_row][adj_col] is None:
                 moves.append(((row, col, adj_row, adj_col), 'regular'))
 
         return moves
@@ -195,7 +175,12 @@ class Board:
 
     def make_move(self, move):
         #update the board state based on the given move
-        start_row, start_col, end_row, end_col = move
+
+        # invert coordinates for player 2
+        if self.current_player == 2:
+            start_row, start_col, end_row, end_col = self.invert_coordinates(move)
+        else:
+            start_row, start_col, end_row, end_col = move
 
         # initialize the reward counter for this move
         reward = 0
@@ -225,7 +210,7 @@ class Board:
 
                 # assign a reward for capturing an opponent piece
                 reward += 10
-                # print(f'Reward for capturing an opponent piece applied to player {self.current_player}')
+                print(f'Reward for capturing an opponent piece applied to player {self.current_player}')
             
             # check if piece has to be promoted to a king
             if (end_row == 0 and piece.player == 2) or (end_row == 7 and piece.player == 1):
@@ -233,11 +218,11 @@ class Board:
 
                 #assign a reward for promoting to a king
                 reward += 5
-                # print(f'Reward for promoting to a king applied to player {self.current_player}')
+                print(f'Reward for promoting to a king applied to player {self.current_player}')
 
             # check for additional captures
             if capture_made:
-                additional_captures = self.get_piece_legal_moves(piece, end_row, end_col)
+                additional_captures = self.get_piece_legal_moves(piece, end_row, end_col, self.current_player)
                 if any(move_type == 'jump' for _, move_type in additional_captures):
                     # update the reward count
                     self.reward_count[self.current_player] += reward
@@ -247,7 +232,7 @@ class Board:
             # small penalty for a normal move without immediate benefit
             if reward == 0:
                 reward -= 0.1
-                # print(f'Small penalty for regular move applied to player {self.current_player}')
+                print(f'Small penalty for regular move applied to player {self.current_player}')
 
             # update the reward count
             self.reward_count[self.current_player] += reward
@@ -260,10 +245,15 @@ class Board:
                 self.switch_player_turn()
         
         else:
-            # print('Illegal move')
+            print('Illegal move')
 
             # penalty for an illegal move
             self.reward_count[self.current_player] -= 100
+
+    def invert_coordinates(self, move):
+        # helper to invert coordinates for player 2
+        start_row, start_col, end_row, end_col = move
+        return 7 - start_row, start_col, 7 - end_row, end_col
     
     def switch_player_turn(self):
         # switch turn between players
@@ -274,19 +264,19 @@ class Board:
         if self.pieces_player_1 == 0:
             self.reward_count[2] += 50
             self.reward_count[1] -= 50
-            # print("Player 2 wins")
+            print("Player 2 wins")
             return True
         elif self.pieces_player_2 == 0:
             self.reward_count[1] += 50
             self.reward_count[2] -= 50
-            # print("Player 1 wins")
+            print("Player 1 wins")
             return True
 
         # check for stalemate and apply penalty
         if not self.get_legal_moves():
             self.reward_count[1] -= 5
             self.reward_count[2] -= 5
-            # print("Stalemate")
+            print("Stalemate")
             return True
         
         return False
