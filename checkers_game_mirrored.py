@@ -79,7 +79,11 @@ class Board:
                 
             print(row_str)
 
-    def get_state_representation(self):
+    def get_state_representation(self, player=None):
+        #if no player specified, use the current player
+        if player is None:
+            player = self.current_player
+        
         # flatten the board into a 1D array
         flat_state = []
 
@@ -88,14 +92,25 @@ class Board:
         # 2 for a player 2 piece
         # 3 for a player 1 king
         # 4 for a player 2 king
-        for row in self.state:
-            for piece in row:
-                if piece is None:
-                    flat_state.append(0)
-                elif piece.player == 1:
-                    flat_state.append(3 if piece.king else 1)
-                elif piece.player == 2:
-                    flat_state.append(4 if piece.king else 2)
+        
+        if player == 1:
+            for row in self.state:
+                for piece in row:
+                    if piece is None:
+                        flat_state.append(0)
+                    elif piece.player == 1:
+                        flat_state.append(3 if piece.king else 1)
+                    elif piece.player == 2:
+                        flat_state.append(4 if piece.king else 2)
+        else:
+            for row in reversed(self.state):
+                for piece in reversed(row):
+                    if piece is None:
+                        flat_state.append(0)
+                    elif piece.player == 1:
+                        flat_state.append(3 if piece.king else 1)
+                    elif piece.player == 2:
+                        flat_state.append(4 if piece.king else 2)
         
         # add the current player turn
         flat_state.append(1 if self.current_player == 1 else -1)
