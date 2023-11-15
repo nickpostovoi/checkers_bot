@@ -57,7 +57,7 @@ class DQN_agent:
             ))
     
     # deciding which action the agent should take in a given state
-    def act(self, state):
+    def act(self, state, legal_moves):
         # use the model to make a prediction
         act_values = self.model.predict(state)
 
