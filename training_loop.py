@@ -1,19 +1,12 @@
 from game_environment import Piece, Board
 from dqn_agent import DQN_agent
 import numpy as np
-import random
-from collections import deque
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.optimizers import Adam
 
 # maximum number of moves in any state is less than 32
-max_possible_moves = 32
+max_possible_moves = 340
 
-# initialise the game environment
+# initialize the game environment and the DQN agent
 checkers_game = Board()
-
-# initialize DQN agent
 state_size = len(checkers_game.get_state_representation())
 agent = DQN_agent(state_size, max_possible_moves)
 

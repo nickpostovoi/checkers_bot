@@ -25,6 +25,10 @@ class Board:
         self.pieces_player_2 = 12
         # initialize variable for storing the reward balance
         self.reward_count = {1: 0, 2: 0}
+        # load the file with possible legal moves mapping to indices
+        self.moves_mapping = self.load_legal_moves()
+        # create reverse mapping from indices to moves
+        self.reverse_moves_mapping = {index: move for move, index in self.moves_mapping.items()}
 
     def initialize_board(self):
         # initialize an empty list to represent the board
@@ -87,26 +91,32 @@ class Board:
         # flatten the board into a 1D array
         flat_state = []
 
-        # 0 for an empty square
-        # 1 for a player 1 piece
-        # 2 for a player 2 piece
-        # 3 for a player 1 king
-        # 4 for a player 2 king
+        # encode the board representation
+        # 0 for empty 
+        # 1 for own piece
+        # 2 for own king
+        # -1 for opponents piece
+        # -2 for opponents king
         for row in self.state[::-1] if player == 2 else self.state:
             for piece in row[::-1] if player == 2 else row:
                 if piece is None:
                     flat_state.append(0)
-                elif piece.player == 1:
-                    flat_state.append(3 if piece.king else 1)
-                elif piece.player == 2:
-                    flat_state.append(4 if piece.king else 2)
-        
-        # add the current player turn
-        flat_state.append(1 if self.current_player == 1 else -1)
-        
-        return flat_state
+                elif piece.player == player:
+                    flat_state.append(2 if piece.king else 1)
+                else:
+                    flat_state.append(-2 if piece.king else -1)
+            
+            return flat_state
 
-    def get_legal_moves(self, player=None):
+    @staticmethod
+    def load_legal_moves():
+        import ast
+        # load all possible legal moves from .txt file and map them to indices
+        with open("legal_moves.txt", "r") as file:
+            moves = [ast.literal_eval(line.strip()) for line in file]
+            return {move: index for index, move in enumerate(moves)}
+
+    def get_legal_moves(self, player=None, return_indices=True):
         # if no player specified, use the current player
         if player is None:
             player = self.current_player
@@ -125,11 +135,18 @@ class Board:
                     # add legal moves for this piece to all legal moves
                     legal_moves.extend(piece_legal_moves)
 
-        # check if there are any jump moves, if yes then filter out regular ones
-        if any(move_type == 'jump' for _, move_type in legal_moves):
-            return [move for move, move_type in legal_moves if move_type == 'jump']
-        
-        return [move for move, move_type in legal_moves if move_type == 'regular']
+        # filter legal moves if jump moves exist
+        filtered_moves = [move for move, move_type in legal_moves 
+                        if any(move_type == 'jump' for _, move_type in legal_moves)]
+
+        if not filtered_moves:
+            filtered_moves = [move for move, move_type in legal_moves if move_type == 'regular']
+
+        # return indices of moves if return_indices is True
+        if return_indices:
+            return [self.moves_mapping[move] for move in filtered_moves]
+        else:
+            return filtered_moves
 
     def get_piece_legal_moves(self, piece, row, col, player):
         # returns a list of legal moves for a specific piece
@@ -176,6 +193,12 @@ class Board:
     def make_move(self, move):
         #update the board state based on the given move
 
+        # check if move is given as an index and convert it to a tuple
+        if isinstance(move, int):
+            move = self.reverse_moves_mapping.get(move, None)
+            if move is None:
+                raise ValueError("Invalid move index provided")
+
         # invert coordinates for player 2
         if self.current_player == 2:
             start_row, start_col, end_row, end_col = self.invert_coordinates(move)
@@ -186,7 +209,7 @@ class Board:
         reward = 0
 
         # check if move is legal
-        if move in self.get_legal_moves():
+        if move in self.get_legal_moves(return_indices=False):
             # move the piece
             piece = self.state[start_row][start_col]
             self.state[end_row][end_col] = piece
@@ -226,7 +249,7 @@ class Board:
                 if any(move_type == 'jump' for _, move_type in additional_captures):
                     # update the reward count
                     self.reward_count[self.current_player] += reward
-                    return # do not switch player turn since another jump is possible
+                    return reward # do not switch player turn since another jump is possible
                 # no additional jumps possible so switch turn
 
             # small penalty for a normal move without immediate benefit
@@ -240,15 +263,17 @@ class Board:
             # check if game is over after each move
             if self.is_game_over():
                 # update rewards based on game over conditions
-                return
+                return reward
             else: 
                 self.switch_player_turn()
         
         else:
-            # print('Illegal move')
+            raise ValueError("Illegal move provided")
 
             # penalty for an illegal move
             self.reward_count[self.current_player] -= 100
+        
+        return reward
 
     def invert_coordinates(self, move):
         # helper to invert coordinates for player 2

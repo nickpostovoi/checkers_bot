@@ -14,7 +14,8 @@ while not board.is_game_over():
     legal_moves = board.get_legal_moves()
 
     move = random.choice(legal_moves)
-    board.make_move(move)
+    reward = board.make_move(move)
+    print(reward)
     board.print_board()
     print("Reward Count:", board.reward_count)
     print("Player 1 pieces: ", board.pieces_player_1)
