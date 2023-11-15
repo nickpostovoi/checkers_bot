@@ -106,7 +106,7 @@ class Board:
                 else:
                     flat_state.append(-2 if piece.king else -1)
             
-            return flat_state
+        return flat_state
 
     @staticmethod
     def load_legal_moves():
@@ -193,6 +193,11 @@ class Board:
     def make_move(self, move):
         #update the board state based on the given move
 
+        # check if the game is already over
+        if self.is_game_over():
+            # Optionally return a default reward or penalty, or simply return
+            raise ValueError("Game is ended")  # Or any other appropriate value or action
+
         # check if move is given as an index and convert it to a tuple
         if isinstance(move, int):
             move = self.reverse_moves_mapping.get(move, None)
@@ -257,22 +262,32 @@ class Board:
                 reward -= 0.1
                 # print(f'Small penalty for regular move applied to player {self.current_player}')
 
-            # update the reward count
-            self.reward_count[self.current_player] += reward
-
-            # check if game is over after each move
-            if self.is_game_over():
-                # update rewards based on game over conditions
-                return reward
-            else: 
-                self.switch_player_turn()
-        
         else:
-            raise ValueError("Illegal move provided")
-
             # penalty for an illegal move
-            self.reward_count[self.current_player] -= 100
-        
+            reward -= 100
+
+        # update the reward count
+        self.reward_count[self.current_player] += reward
+
+        # check if game is over and assign additional rewards/penalties
+        if self.is_game_over():
+            if self.pieces_player_1 == 0:
+                self.reward_count[2] += 50
+                self.reward_count[1] -= 50
+                reward += 50 if self.current_player == 2 else -50
+            elif self.pieces_player_2 == 0:
+                self.reward_count[1] += 50
+                self.reward_count[2] -= 50
+                reward += 50 if self.current_player == 1 else -50
+            elif not self.get_legal_moves():
+                # Stalemate penalty
+                self.reward_count[1] -= 5
+                self.reward_count[2] -= 5
+                reward -= 5
+        else:
+            # switch player turn if game is not over
+            self.switch_player_turn()
+
         return reward
 
     def invert_coordinates(self, move):
@@ -285,23 +300,15 @@ class Board:
         self.current_player = 3 - self.current_player
 
     def is_game_over(self):
-        # check if one of the players won and assign rewards/penalties
-        if self.pieces_player_1 == 0:
-            self.reward_count[2] += 50
-            self.reward_count[1] -= 50
-            # print("P2W")
-            return True
-        elif self.pieces_player_2 == 0:
-            self.reward_count[1] += 50
-            self.reward_count[2] -= 50
-            # print("P1W")
+    # check if one of the players has won
+        if self.pieces_player_1 == 0 or self.pieces_player_2 == 0:
+            # game ends if either player has no pieces left
             return True
 
-        # check for stalemate and apply penalty
+        # check for stalemate
         if not self.get_legal_moves():
-            self.reward_count[1] -= 5
-            self.reward_count[2] -= 5
-            # print("ST")
+            # game ends in a stalemate if there are no legal moves left
             return True
         
+        # if none of the above conditions are met, the game continues
         return False
