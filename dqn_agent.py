@@ -10,7 +10,7 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 
 class DQN_agent:
-    def __init__(self, state_size, action_size):
+    def __init__(self, state_size, action_size, initial_epsilon=1.0):
         # initialize the agent
         
         # state representation from get_state_representation()
@@ -25,7 +25,7 @@ class DQN_agent:
         self.gamma = 0.95 
         # exploration rate 
         # balances exploration (trying new actions) and exploitation (using the best-known action)
-        self.epsilon = 0.95
+        self.epsilon = initial_epsilon
         # the minimum value that epsilon can reach during the training process
         self.epsilon_min = 0.01
         # rate at which the epsilon value decreases over time
@@ -33,8 +33,13 @@ class DQN_agent:
         # rate at which the weights in the neural network are adjusted during each training iteration
         self.learning_rate = 0.001
         
-        # initialize the model
+        # initialize the main model
         self.model = self._build_model()
+        # initialize the target model
+        self.target_model = self._build_model()
+
+        # step counter for updating target model
+        self.update_counter = 0
 
     def _build_model(self):
         # compiles a neural net for DQ model
@@ -45,6 +50,10 @@ class DQN_agent:
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse', optimizer=Adam(learning_rate=self.learning_rate))
         return model
+    
+    def update_target_model(self):
+        # method to update the target model
+        self.target_model.set_weights(self.model.get_weights())
     
     def remember(self, state, action, reward, next_state, done):
         #enables the agent to store experiences and learn from them effectively through experience replay
@@ -95,7 +104,7 @@ class DQN_agent:
             if not done:
                 next_state = np.reshape(next_state, [1, self.state_size])
                 # if the episode is not done, the target Q-value is calculated using the Bellman equation
-                target = reward + self.gamma * np.amax(self.model.predict(next_state, verbose=1)[0])
+                target = reward + self.gamma * np.amax(self.target_model.predict(next_state, verbose=0)[0])
             state = np.reshape(state, [1, self.state_size])
             # obtain the model prediction for the current state
             target_f = self.model.predict(state, verbose=0)
@@ -103,12 +112,17 @@ class DQN_agent:
             target_f[0][action] = target
             # the model is trained (updated) using this new target
             # this training step adjusts the model's weights to better predict the target Q-values in the future
-            self.model.fit(state, target_f, epochs=1, verbose=1)
+            self.model.fit(state, target_f, epochs=1, verbose=0)
         # check if the exploration rate is greater than a minimum value
         if self.epsilon > self.epsilon_min:
             # decay the exploration rate
             self.epsilon *= self.epsilon_decay
             print("Current exploration rate (epsilon):", self.epsilon)
+        
+        # increment the step counter and update the target model if needed
+        self.update_counter += 1
+        if self.update_counter % 100 == 0:
+            self.update_target_model()
     
     def load(self, name):
         self.model.load_weights(name)

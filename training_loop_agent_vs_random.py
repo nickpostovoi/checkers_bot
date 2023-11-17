@@ -9,7 +9,7 @@ checkers_game = Board()
 state_size = len(checkers_game.get_state_representation())
 agent = DQN_agent(state_size, 340)
 
-episodes = 20
+episodes = 100
 batch_size = 128
 
 # initialize a list to store cumulative rewards after each episode
@@ -59,11 +59,11 @@ for episode in range(episodes):
     if len(agent.memory) > batch_size:
         agent.replay(batch_size)
 
-    if episode % 100 == 0:
+    if episode % 20 == 0:
         agent.save(f"model_checkpoints/checkers_model_episode_{episode}.h5")
 
     # plotting the bar chart after each episode
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(18, 6))
     bar_width = 0.35  # Width of the bars
     episodes_axis = np.arange(1, episode + 2)  # Episode numbers
 
