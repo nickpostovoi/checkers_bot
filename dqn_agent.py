@@ -42,7 +42,7 @@ class DQN_agent:
         # the minimum value that epsilon can reach during the training process
         self.epsilon_min = 0.05
         # rate at which the epsilon value decreases over time
-        self.epsilon_decay = 0.999
+        self.epsilon_decay = 0.995
         # rate at which the weights in the neural network are adjusted during each training iteration
         self.learning_rate = 0.001
         
