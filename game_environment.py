@@ -121,8 +121,9 @@ class Board:
         if player is None:
             player = self.current_player
 
-        # return a list of legal moves for a player
         legal_moves = []
+        jump_moves = []  
+
         # mirror the orientation of the board for player 2
         state = self.state[::-1] if player == 2 else self.state
 
@@ -132,21 +133,17 @@ class Board:
                 if piece and piece.player == player:
                     # compute legal moves for a piece
                     piece_legal_moves = self.get_piece_legal_moves(piece, row_index, col_index, player)
-                    # add legal moves for this piece to all legal moves
-                    legal_moves.extend(piece_legal_moves)
+                    for move, move_type in piece_legal_moves:
+                        if move_type == 'jump':
+                            jump_moves.append(move)
+                        else:
+                            legal_moves.append(move)
 
-        # filter legal moves if jump moves exist
-        filtered_moves = [move for move, move_type in legal_moves 
-                        if any(move_type == 'jump' for _, move_type in legal_moves)]
-
-        if not filtered_moves:
-            filtered_moves = [move for move, move_type in legal_moves if move_type == 'regular']
+        # if any jump moves are available, they take precedence
+        final_moves = jump_moves if jump_moves else legal_moves
 
         # return indices of moves if return_indices is True
-        if return_indices:
-            return [self.moves_mapping[move] for move in filtered_moves]
-        else:
-            return filtered_moves
+        return [self.moves_mapping[move] for move in final_moves] if return_indices else final_moves
 
     def get_piece_legal_moves(self, piece, row, col, player):
         # returns a list of legal moves for a specific piece
@@ -210,6 +207,8 @@ class Board:
         else:
             start_row, start_col, end_row, end_col = move
 
+        print(f"Move from ({start_row}, {start_col}) to ({end_row}, {end_col})")
+
         # initialize the reward counter for this move
         reward = 0
 
@@ -252,6 +251,8 @@ class Board:
             if capture_made:
                 additional_captures = self.get_piece_legal_moves(piece, end_row, end_col, self.current_player)
                 if any(move_type == 'jump' for _, move_type in additional_captures):
+                    # sssign an additional reward for a move leading to more captures
+                    reward += 5
                     # update the reward count
                     self.reward_count[self.current_player] += reward
                     return reward # do not switch player turn since another jump is possible

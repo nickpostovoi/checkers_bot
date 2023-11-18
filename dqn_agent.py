@@ -6,6 +6,17 @@ import numpy as np
 import random
 import pickle
 from collections import deque
+
+# import tensorflow as tf
+# gpus = tf.config.experimental.list_physical_devices('GPU')
+# if gpus:
+#     try:
+#         for gpu in gpus:
+#             tf.config.experimental.set_memory_growth(gpu, True)
+#     except RuntimeError as e:
+#         # memory growth must be set before GPUs have been initialized
+#         print(e)
+
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
@@ -55,6 +66,8 @@ class DQN_agent:
 
         model.add(Dense(1024, activation='relu', kernel_regularizer=l2(0.01)))
 
+        model.add(Dense(340, activation='linear'))
+
         model.compile(loss='mse', optimizer=Adam(learning_rate=self.learning_rate))
         return model
     
@@ -88,11 +101,13 @@ class DQN_agent:
             return chosen_action
         else:
             # use the model to make a prediction
-            act_values = self.model.predict(state, verbose=0)
-            # filter out act_values to only include legal moves
-            legal_act_values = act_values[0][legal_moves]
-            # return the action with the highest Q-value
-            chosen_action = legal_moves[np.argmax(legal_act_values)]
+            act_values = self.model.predict(state, verbose=0)[0]
+            # set the Q-values of illegal moves to negative infinity
+            all_possible_actions = set(range(self.action_size))  # create a set of all possible actions
+            illegal_moves = all_possible_actions - set(legal_moves)  # determine illegal moves
+            act_values[list(illegal_moves)] = float('-inf')
+
+            chosen_action = np.argmax(act_values)
             # print(f"A{chosen_action}")
             return chosen_action
 
@@ -132,6 +147,7 @@ class DQN_agent:
     def load(self, name):
         # load the current weights of the neural network model from a file
         self.model.load_weights(name)
+        self.target_model.load_weights(name)
 
     def save(self, name):
         # save the current weights of the neural network model to a file
