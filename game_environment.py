@@ -31,8 +31,6 @@ class Board:
         self.moves_mapping = self.load_legal_moves()
         # create reverse mapping from indices to moves
         self.reverse_moves_mapping = {index: move for move, index in self.moves_mapping.items()}
-        # initialize a list to store the state history
-        self.state_history = []
 
     def initialize_board(self):
         # initialize an empty list to represent the board
@@ -111,35 +109,6 @@ class Board:
                     flat_state.append(-2 if piece.king else -1)
             
         return flat_state
-
-    def get_state_hash(self):
-        # create a hashable representation of the current board state
-        return hash(str(self.state))
-    
-    def is_repetitive_state(self, repetition_limit = 3):
-        # check if the current state has occured certain number of times
-        current_state_hash = self.get_state_hash()
-        occurences = self.state_history.count(current_state_hash)
-        return occurences >= repetition_limit
-
-    def resolve_non_progressing_game(self):
-        reward = 0
-        # resolve the non progressing game based on a piece count
-        if self.pieces_player_1 > self.pieces_player_2:
-            # player 1 wins
-            self.reward_count[1] += 50
-            self.reward_count[2] -= 50
-            reward = 50
-        elif self.pieces_player_2 > self.pieces_player_1:
-            # player 2 wins
-            self.reward_count[2] += 50
-            self.reward_count[1] -= 50
-            reward = -50
-        else:
-            self.reward_count[1] -= 20
-            self.reward_count[2] -= 20
-            reward = -20
-        return reward
 
     @staticmethod
     def load_legal_moves():
@@ -290,15 +259,6 @@ class Board:
                     self.reward_count[self.current_player] += reward
                     return reward # do not switch player turn since another jump is possible
                 # no additional jumps possible so switch turn
- 
-            # update the state history after making the move
-            current_state_hash = self.get_state_hash()
-            self.state_history.append(current_state_hash)
-
-            # check for repeated states and update reward
-            if self.is_repetitive_state():
-                additional_reward = self.resolve_non_progressing_game()
-                reward += additional_reward  # update the reward with the value from resolve_non_progressing_game
 
             # small penalty for a normal move without immediate benefit
             if reward == 0:
