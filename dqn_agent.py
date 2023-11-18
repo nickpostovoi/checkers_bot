@@ -7,7 +7,7 @@ import random
 import pickle
 from collections import deque
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l2
 
@@ -45,14 +45,16 @@ class DQN_agent:
 
     def _build_model(self):
         # compiles a neural net for DQ model
+
         model = Sequential()
-        model.add(Dense(256, input_dim=self.state_size, activation='relu', kernel_regularizer=l2(0.01)))
-        model.add(Dropout(0.2))
-        model.add(Dense(512, activation='relu', kernel_regularizer=l2(0.01)))
-        model.add(Dropout(0.2))
+        model.add(Dense(512, input_dim=self.state_size, activation='relu', kernel_regularizer=l2(0.01)))
+
         model.add(Dense(1024, activation='relu', kernel_regularizer=l2(0.01)))
-        model.add(Dropout(0.2))
-        model.add(Dense(self.action_size, activation='linear'))
+
+        model.add(Dense(2048, activation='relu', kernel_regularizer=l2(0.01)))
+
+        model.add(Dense(1024, activation='relu', kernel_regularizer=l2(0.01)))
+
         model.compile(loss='mse', optimizer=Adam(learning_rate=self.learning_rate))
         return model
     
