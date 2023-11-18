@@ -4,10 +4,12 @@
 # import necessary libraries
 import numpy as np
 import random
+import pickle
 from collections import deque
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.regularizers import l2
 
 class DQN_agent:
     def __init__(self, state_size, action_size, initial_epsilon=1.0):
@@ -27,9 +29,9 @@ class DQN_agent:
         # balances exploration (trying new actions) and exploitation (using the best-known action)
         self.epsilon = initial_epsilon
         # the minimum value that epsilon can reach during the training process
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.05
         # rate at which the epsilon value decreases over time
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.999
         # rate at which the weights in the neural network are adjusted during each training iteration
         self.learning_rate = 0.001
         
@@ -44,9 +46,12 @@ class DQN_agent:
     def _build_model(self):
         # compiles a neural net for DQ model
         model = Sequential()
-        model.add(Dense(144, input_dim=self.state_size, activation='relu'))
-        model.add(Dense(288, activation='relu'))
-        model.add(Dense(576, activation='relu'))
+        model.add(Dense(256, input_dim=self.state_size, activation='relu', kernel_regularizer=l2(0.01)))
+        model.add(Dropout(0.2))
+        model.add(Dense(512, activation='relu', kernel_regularizer=l2(0.01)))
+        model.add(Dropout(0.2))
+        model.add(Dense(1024, activation='relu', kernel_regularizer=l2(0.01)))
+        model.add(Dropout(0.2))
         model.add(Dense(self.action_size, activation='linear'))
         model.compile(loss='mse', optimizer=Adam(learning_rate=self.learning_rate))
         return model
@@ -77,24 +82,22 @@ class DQN_agent:
         # checks if the agent should take a random action based on the current value of exploration rate
         if np.random.rand() <= self.epsilon:
             chosen_action = random.choice(legal_moves)
-            print("Taken random action:", chosen_action)
+            # print(f"RA{chosen_action}")
             return chosen_action
         else:
             # use the model to make a prediction
             act_values = self.model.predict(state, verbose=0)
-            print(act_values)
             # filter out act_values to only include legal moves
             legal_act_values = act_values[0][legal_moves]
-            print(legal_act_values)
             # return the action with the highest Q-value
             chosen_action = legal_moves[np.argmax(legal_act_values)]
-            print(f"Chosen best-known action: {chosen_action} based on Q-values")
+            # print(f"A{chosen_action}")
             return chosen_action
 
     # defining experience roleplay function (agent learns from a random sample of past experiences 
     # avoiding the pitfalls of strongly correlated sequential experiences)
     def replay(self, batch_size):
-        print('Replay is triggered')
+        # print('Replay is triggered')
         # randomly sample a minibatch of experiences from the memory
         minibatch = random.sample(self.memory, min(len(self.memory), batch_size))
         # iterate through minibatch of experiences and calculate target Q-value for the action taken
@@ -125,8 +128,19 @@ class DQN_agent:
             self.update_target_model()
     
     def load(self, name):
+        # load the current weights of the neural network model from a file
         self.model.load_weights(name)
 
     def save(self, name):
         # save the current weights of the neural network model to a file
         self.model.save_weights(name)
+    
+    def save_memory(self, filename):
+        # serialise and save the memory
+        with open(filename, 'wb') as f:
+            pickle.dump(self.memory, f)
+
+    def load_memory(self, filename):
+        # deserialise and load the memory
+        with open(filename, 'rb') as f:
+            self.memory = pickle.load(f)
