@@ -24,7 +24,7 @@ agent = DQN_agent(state_size, 340, initial_epsilon=1)
 # except Exception as e:
 #     print(f"Error loading memory: {e}")
 
-episodes = 1000
+episodes = 501
 batch_size = 512
 save_interval = 100
 replay_interval = 10
@@ -40,16 +40,14 @@ for episode in range(episodes):
 
     while not checkers_game.is_game_over():
         legal_moves = checkers_game.get_legal_moves()
-        print(checkers_game.get_legal_moves(return_indices=False))
+
         # agent makes a move
         action = agent.act(state, legal_moves)
-        
+
         immediate_reward = checkers_game.make_move(action)
         next_state = np.array(checkers_game.get_state_representation())
         next_state = np.reshape(next_state, [1, state_size])
         done = checkers_game.is_game_over()
-
-        print(checkers_game.print_board())
 
         # remember the experience
         agent.remember(state, action, immediate_reward, next_state, done)

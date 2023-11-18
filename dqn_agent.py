@@ -106,7 +106,6 @@ class DQN_agent:
             all_possible_actions = set(range(self.action_size))  # create a set of all possible actions
             illegal_moves = all_possible_actions - set(legal_moves)  # determine illegal moves
             act_values[list(illegal_moves)] = float('-inf')
-
             chosen_action = np.argmax(act_values)
             # print(f"A{chosen_action}")
             return chosen_action
