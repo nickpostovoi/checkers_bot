@@ -8,6 +8,22 @@ checkers_game = Board()
 state_size = len(checkers_game.get_state_representation())
 agent = DQN_agent(state_size, 340)
 
+weights_path = 'path/to/saved_model_weights.h5'
+memory_path = 'path/to/saved_memory.pkl'
+
+# Load the model weights and memory if the files exist
+try:
+    agent.load(weights_path)
+    print("Loaded model weights.")
+except Exception as e:
+    print(f"Error loading model weights: {e}")
+
+try:
+    agent.load_memory(memory_path)
+    print("Loaded memory.")
+except Exception as e:
+    print(f"Error loading memory: {e}")
+
 episodes = 5000
 batch_size = 512
 save_interval = 100
