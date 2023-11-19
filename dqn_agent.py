@@ -7,15 +7,14 @@ import random
 import pickle
 from collections import deque
 
-# import tensorflow as tf
-# gpus = tf.config.experimental.list_physical_devices('GPU')
-# if gpus:
-#     try:
-#         for gpu in gpus:
-#             tf.config.experimental.set_memory_growth(gpu, True)
-#     except RuntimeError as e:
-#         # memory growth must be set before GPUs have been initialized
-#         print(e)
+import tensorflow as tf
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+    except RuntimeError as e:
+        print(e)
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
