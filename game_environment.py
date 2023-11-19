@@ -34,7 +34,8 @@ class Board:
         # history of board states for each player
         self.history = {1: [], 2: []}
 
-        self.cyc_beh_flag = False
+        self.cyc_beh_flag_p1 = False
+        self.cyc_beh_flag_p2 = False
 
     def initialize_board(self):
         # initialize an empty list to represent the board
@@ -216,7 +217,7 @@ class Board:
                 moves.append(((row, col, adj_row, adj_col), 'regular'))
 
         return moves
-            
+
     def is_move_within_board(self, row, col):
         # check if the given square is within the board
         return 0 <= row < 8 and 0 <= col < 8
@@ -283,15 +284,17 @@ class Board:
 
             # check for additional captures
             if capture_made:
-                additional_captures = self.get_piece_legal_moves(piece, end_row, end_col, self.current_player)
-                if any(move_type == 'jump' for _, move_type in additional_captures):
-                    # sssign an additional reward for a move leading to more captures
+                all_legal_moves = self.get_legal_moves(return_indices=False)
+                if self.current_player == 1:
+                    additional_jumps = [m for m in all_legal_moves if m[0] == end_row and m[1] == end_col and abs(m[2] - (end_row)) == 2]
+                else: 
+                    additional_jumps = [m for m in all_legal_moves if m[0] == 7 - end_row and m[1] == end_col and abs(m[2] - (7-end_row)) == 2]
+                if additional_jumps:
+                    # assign an additional reward for a move leading to more captures
                     reward += 5
-                    # update the reward count
                     self.reward_count[self.current_player] += reward
-                    return reward # do not switch player turn since another jump is possible
-                # no additional jumps possible so switch turn
-
+                    return reward  # do not switch player turn since another jump is possible
+            
             # small penalty for a normal move without immediate benefit
             if reward == 0:
                 reward -= 0.1
@@ -309,7 +312,10 @@ class Board:
             reward -= 100
             self.reward_count[self.current_player] += reward
             print(f"Cyclical behavior detected for player {self.current_player}")
-            self.cyc_beh_flag = True
+            if self.current_player == 1:
+                self.cyc_beh_flag_p1 = True
+            else:
+                self.cyc_beh_flag_p2 = True
             return reward
 
         # update the reward count
@@ -347,7 +353,7 @@ class Board:
 
     def is_game_over(self):
     # check if one of the players has won
-        if self.cyc_beh_flag:
+        if self.cyc_beh_flag_p1 or self.cyc_beh_flag_p2:
             # game ends if either player engaged in cyclical behavior
             return True
 

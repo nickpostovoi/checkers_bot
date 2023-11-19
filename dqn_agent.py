@@ -42,7 +42,7 @@ class DQN_agent:
         # the minimum value that epsilon can reach during the training process
         self.epsilon_min = 0.3
         # rate at which the epsilon value decreases over time
-        self.epsilon_decay = 0.999
+        self.epsilon_decay = 0.995
         # rate at which the weights in the neural network are adjusted during each training iteration
         self.learning_rate = 0.001
         
@@ -56,18 +56,12 @@ class DQN_agent:
 
     def _build_model(self):
         # compiles a neural net for DQ model
-
         model = Sequential()
         model.add(Dense(512, input_dim=self.state_size, activation='relu', kernel_regularizer=l2(0.01)))
-
         model.add(Dense(1024, activation='relu', kernel_regularizer=l2(0.01)))
-
         model.add(Dense(2048, activation='relu', kernel_regularizer=l2(0.01)))
-
         model.add(Dense(1024, activation='relu', kernel_regularizer=l2(0.01)))
-
         model.add(Dense(340, activation='linear'))
-
         model.compile(loss='mse', optimizer=Adam(learning_rate=self.learning_rate))
         return model
     

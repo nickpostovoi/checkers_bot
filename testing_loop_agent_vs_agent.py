@@ -9,11 +9,11 @@ checkers_game = Board()
 state_size = len(checkers_game.get_state_representation())
 action_size = 340
 agent1 = DQN_agent(state_size, action_size, initial_epsilon=0)
-agent1.load('model_checkpoints/checkers_model_episode_500.h5')
+agent1.load('model_checkpoints/checkers_model_episode_1001.h5')
 agent2 = DQN_agent(state_size, action_size, initial_epsilon=0)
-agent2.load('model_checkpoints/checkers_model_episode_400.h5')
+agent2.load('model_checkpoints/checkers_model_episode_0.h5')
 
-episodes = 10
+episodes = 1
 agent_1_wins = 0
 agent_2_wins = 0
 draws = 0
@@ -45,11 +45,11 @@ for episode in range(episodes):
         print(checkers_game.print_board())
 
     # determine the winner
-    if checkers_game.pieces_player_1 == 0 or not checkers_game.get_legal_moves(player=1):
+    if checkers_game.pieces_player_1 == 0 or not checkers_game.get_legal_moves(player=1) or checkers_game.cyc_beh_flag_p1:
         agent_2_wins += 1
-    elif checkers_game.pieces_player_2 == 0 or not checkers_game.get_legal_moves(player=2):
+    elif checkers_game.pieces_player_2 == 0 or not checkers_game.get_legal_moves(player=2) or checkers_game.cyc_beh_flag_p2:
         agent_1_wins += 1
-    else:
+    else: 
         draws += 1
     
     print(f"Episode {episode} finished.")
