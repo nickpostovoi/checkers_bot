@@ -6,27 +6,27 @@ import random
 # initialize the game environment and the DQN agent
 checkers_game = Board()
 state_size = len(checkers_game.get_state_representation())
-agent = DQN_agent(state_size, 340, initial_epsilon=1)
+agent = DQN_agent(state_size, 340, initial_epsilon=0.7)
 
-# weights_path = 'model_checkpoints/checkers_model_episode_1001.h5'
-# memory_path = 'model_checkpoints/checkers_memory.pkl'
+weights_path = 'model_checkpoints/checkers_model_episode_17000.h5'
+memory_path = 'model_checkpoints/checkers_memory.pkl'
 
-# # Load the model weights and memory if the files exist
-# try:
-#     agent.load(weights_path)
-#     print("Loaded model weights.")
-# except Exception as e:
-#     print(f"Error loading model weights: {e}")
+# Load the model weights and memory if the files exist
+try:
+    agent.load(weights_path)
+    print("Loaded model weights.")
+except Exception as e:
+    print(f"Error loading model weights: {e}")
 
-# try:
-#     agent.load_memory(memory_path)
-#     print("Loaded memory.")
-# except Exception as e:
-#     print(f"Error loading memory: {e}")
+try:
+    agent.load_memory(memory_path)
+    print("Loaded memory.")
+except Exception as e:
+    print(f"Error loading memory: {e}")
 
-episodes = 10000
+episodes = 5000
 batch_size = 5000
-save_interval = 500
+save_interval = 1000
 replay_interval = 100
 
 # initialize a list to store cumulative rewards after each episode
@@ -68,9 +68,9 @@ for episode in range(episodes):
 
     # periodic saving of weights and memory
     if episode % save_interval == 0 or episode == episodes - 1:
-        agent.save(f"model_checkpoints/checkers_model_episode_{episode}.h5")
+        agent.save(f"model_checkpoints/checkers_model_episode_{episode+17001}.h5")
         agent.save_memory(f"model_checkpoints/checkers_memory.pkl")
-        print(f"Saved model and memory at episode {episode}")
+        print(f"Saved model and memory at episode {episode+17001}")
 
     # # plotting the bar chart after each episode
     # plt.figure(figsize=(18, 6))
