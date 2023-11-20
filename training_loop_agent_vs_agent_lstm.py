@@ -27,9 +27,9 @@ agent = DQN_agent(state_size, 340, num_past_states=6, initial_epsilon=1)
 # except Exception as e:
 #     print(f"Error loading memory: {e}")
 
-episodes = 1000
+episodes = 200000
 batch_size = 5000
-save_interval = 100
+save_interval = 10000
 replay_interval = 100
 
 # initialize a list to store cumulative rewards after each episode
