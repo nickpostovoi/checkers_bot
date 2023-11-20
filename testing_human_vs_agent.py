@@ -9,6 +9,6 @@ checkers_game = Board()
 state_size = len(checkers_game.get_state_representation())
 action_size = 340
 agent = DQN_agent(state_size, action_size, initial_epsilon=0)
-agent.load('model_checkpoints/checkers_model_episode_17000.h5')
+agent.load('model_checkpoints/checkers_model_episode_1481001.h5')
 
 # checkers_game.make_move(agent.act(np.reshape(np.array(checkers_game.get_state_representation()), [1, state_size]), checkers_game.get_legal_moves()))

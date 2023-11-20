@@ -39,9 +39,9 @@ class DQN_agent:
         # balances exploration (trying new actions) and exploitation (using the best-known action)
         self.epsilon = initial_epsilon
         # the minimum value that epsilon can reach during the training process
-        self.epsilon_min = 0.1
+        self.epsilon_min = 1
         # rate at which the epsilon value decreases over time
-        self.epsilon_decay = 0.999
+        self.epsilon_decay = 1
         # rate at which the weights in the neural network are adjusted during each training iteration
         self.learning_rate = 0.001
         
