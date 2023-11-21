@@ -194,8 +194,7 @@ class Board:
 
         # check if the game is already over
         if self.is_game_over():
-            # Optionally return a default reward or penalty, or simply return
-            raise ValueError("Game is ended")  # Or any other appropriate value or action
+            raise ValueError("Game is over")
 
         # check if move is given as an index and convert it to a tuple
         if isinstance(move, int) or isinstance(move, np.int64):
@@ -209,10 +208,9 @@ class Board:
         else:
             start_row, start_col, end_row, end_col = move
 
-        # print(f"Move from ({start_row}, {start_col}) to ({end_row}, {end_col})")
-
         # initialize the reward counter for this move
-        reward = 0
+        current_player_balance = 0
+        opponent_player_balance = 0
 
         # check if move is legal
         if move in self.get_legal_moves(return_indices=False):
@@ -238,16 +236,17 @@ class Board:
                 capture_made = True
 
                 # assign a reward for capturing an opponent piece
-                reward += 10
-                # print(f'Reward for capturing an opponent piece applied to player {self.current_player}')
+                current_player_balance += 10
+                # assign a penalty to the opponent for losing a piece
+                opponent_player_balance -= 5
             
             # check if piece has to be promoted to a king
             if (end_row == 0 and piece.player == 2) or (end_row == 7 and piece.player == 1):
+                # promote a piece for a king
                 piece.make_king()
-
                 #assign a reward for promoting to a king
-                reward += 5
-                # print(f'Reward for promoting to a king applied to player {self.current_player}')
+                current_player_balance += 5
+                opponent_player_balance -= 2
 
             # check for additional captures
             if capture_made:
@@ -258,42 +257,44 @@ class Board:
                     additional_jumps = [m for m in all_legal_moves if m[0] == 7 - end_row and m[1] == end_col and abs(m[2] - (7-end_row)) == 2]
                 if additional_jumps:
                     # assign an additional reward for a move leading to more captures
-                    reward += 5
-                    self.reward_count[self.current_player] += reward
-                    return reward  # do not switch player turn since another jump is possible
+                    current_player_balance += 5
+                    opponent_player_balance -= 5
+                    
+                    # update the reward count
+                    self.reward_count[self.current_player] += current_player_balance
+                    self.reward_count[3 - self.current_player] += opponent_player_balance
+                    
+                    return  # do not switch player turn since another jump is possible
             
             # small penalty for a normal move without immediate benefit
-            if reward == 0:
-                reward -= 0.1
-                # print(f'Small penalty for regular move applied to player {self.current_player}')
+            if current_player_balance == 0:
+                current_player_balance -= 0.1
 
         else:
             # penalty for an illegal move
-            reward -= 100
+            current_player_balance = -100
 
         # update the reward count
-        self.reward_count[self.current_player] += reward
+        self.reward_count[self.current_player] += current_player_balance
+        self.reward_count[3 - self.current_player] += opponent_player_balance
 
         # check if game is over and assign additional rewards/penalties
         if self.is_game_over():
             if self.pieces_player_1 == 0:
-                self.reward_count[2] += 100
-                self.reward_count[1] -= 100
-                reward += 100 if self.current_player == 2 else -100
+                self.reward_count[2] += 200
+                self.reward_count[1] -= 200
             elif self.pieces_player_2 == 0:
-                self.reward_count[1] += 100
-                self.reward_count[2] -= 100
-                reward += 100 if self.current_player == 1 else -100
+                self.reward_count[1] += 200
+                self.reward_count[2] -= 200
             elif not self.get_legal_moves():
                 # stalemate penalty
-                self.reward_count[1] -= 5
-                self.reward_count[2] -= 5
-                reward -= 5
+                self.reward_count[1] -= 10
+                self.reward_count[2] -= 10
         else:
             # switch player turn if game is not over
             self.switch_player_turn()
-
-        return reward
+        
+        return
 
     def invert_coordinates(self, move):
         # helper to invert coordinates for player 2

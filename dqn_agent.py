@@ -30,7 +30,8 @@ class DQN_agent:
         # possible actions from get_legal_moves()
         self.action_size = action_size
         # a double-ended queue to store experiences
-        self.memory = deque(maxlen=15000)
+        self.memory_p1 = deque(maxlen=20000)
+        self.memory_p2 = deque(maxlen=20000)
         # discount rate (determines the importance of future rewards)
         # lower rate makes agent more short-sighted
         # higher rate makes agent value future rewards more significantly (far-sighted)
@@ -41,7 +42,7 @@ class DQN_agent:
         # the minimum value that epsilon can reach during the training process
         self.epsilon_min = 0.05
         # rate at which the epsilon value decreases over time
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 1
         # rate at which the weights in the neural network are adjusted during each training iteration
         self.learning_rate = 0.001
         
@@ -68,15 +69,24 @@ class DQN_agent:
         # method to update the target model
         self.target_model.set_weights(self.model.get_weights())
     
-    def remember(self, state, action, reward, next_state, done):
+    def remember(self, player, state, action, reward, next_state, done):
         #enables the agent to store experiences and learn from them effectively through experience replay
-        self.memory.append((
-            state, # current state of the environment before the agent takes an action 
-            action, # action taken by the agent in the current state
-            reward, # immediate reward received after taking the action
-            next_state, # state of the environment after the action is taken.
-            done # boolean indicating whether this state-action pair led to the end of an episode
-            ))
+        if player == 1:
+            self.memory_p1.append((
+                state, # current state of the environment before the agent takes an action 
+                action, # action taken by the agent in the current state
+                reward, # immediate reward received after taking the action
+                next_state, # state of the environment after the action is taken.
+                done # boolean indicating whether this state-action pair led to the end of an episode
+                ))
+        else:
+            self.memory_p2.append((
+                state,
+                action,
+                reward, 
+                next_state,
+                done
+                ))
     
     def act(self, state, legal_moves):
         # deciding which action the agent should take in a given state
@@ -102,8 +112,12 @@ class DQN_agent:
 
     # defining experience roleplay function (agent learns from a random sample of past experiences 
     # avoiding the pitfalls of strongly correlated sequential experiences)
-    def replay(self, batch_size):
-        minibatch = random.sample(self.memory, min(len(self.memory), batch_size))
+    def replay(self, player, batch_size):
+
+        if player == 1:
+            minibatch = random.sample(self.memory_p1, min(len(self.memory_p1), batch_size))
+        else: 
+            minibatch = random.sample(self.memory_p2, min(len(self.memory_p2), batch_size))
 
         # separate the minibatch into states, actions, rewards, next_states, and dones
         states = np.array([x[0] for x in minibatch])
@@ -135,7 +149,7 @@ class DQN_agent:
 
         # update target model periodically
         self.update_counter += 1
-        if self.update_counter % 100 == 0:
+        if self.update_counter % 20 == 0:
             self.update_target_model()
     
     def load(self, name):
