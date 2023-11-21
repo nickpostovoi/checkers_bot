@@ -10,10 +10,10 @@ checkers_game = Board()
 state_size = len(checkers_game.get_state_representation())
 agent = DQN_agent(state_size, 340, initial_epsilon=1)
 
-weights_path = 'model_checkpoints/checkers_model_episode_331001.h5'
+weights_path = 'model_checkpoints/checkers_model_episode_1481001.h5'
 memory_path = 'model_checkpoints/checkers_memory.pkl'
 
-# Load the model weights and memory if the files exist
+# load the model weights and memory if the files exist
 try:
     agent.load(weights_path)
     print("Loaded model weights.")
@@ -26,10 +26,10 @@ try:
 except Exception as e:
     print(f"Error loading memory: {e}")
 
-episodes = 5000000
-batch_size = 5000
-save_interval = 10000
-replay_interval = 100
+episodes = 20000
+batch_size = 2500
+save_interval = 500
+replay_interval = 10
 
 # initialize a list to store cumulative rewards after each episode
 cumulative_rewards_p1 = []
@@ -71,22 +71,7 @@ for episode in range(episodes):
         
     # periodic saving of weights and memory
     if episode % save_interval == 0 or episode == episodes - 1:
-        agent.save(f"model_checkpoints/checkers_model_episode_{episode+331001}.h5")
+        agent.save(f"model_checkpoints/checkers_model_episode_{episode+1481002}.h5")
         agent.save_memory(f"model_checkpoints/checkers_memory.pkl")
-        print(f"Saved model and memory at episode {episode+331001}")
+        print(f"Saved model and memory at episode {episode+1481002}")
         K.clear_session()
-
-    # # plotting the bar chart after each episode
-    # plt.figure(figsize=(18, 6))
-    # bar_width = 0.35  # Width of the bars
-    # episodes_axis = np.arange(1, episode + 2)  # Episode numbers
-
-    # plt.bar(episodes_axis - bar_width/2, cumulative_rewards_p1, bar_width, color='blue', alpha=0.6, label='Player 1')
-    # plt.bar(episodes_axis + bar_width/2, cumulative_rewards_p2, bar_width, color='red', alpha=0.6, label='Player 2')
-
-    # plt.xlabel('Episode')
-    # plt.ylabel('Total Cumulative Reward')
-    # plt.title('Total Cumulative Reward After Each Episode')
-    # plt.xticks(episodes_axis)  # Set x-ticks to be at the bar centers
-    # plt.legend()
-    # plt.show()

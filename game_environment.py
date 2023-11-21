@@ -31,11 +31,6 @@ class Board:
         self.moves_mapping = self.load_legal_moves()
         # create reverse mapping from indices to moves
         self.reverse_moves_mapping = {index: move for move, index in self.moves_mapping.items()}
-        # history of board states for each player
-        self.history = {1: [], 2: []}
-
-        self.cyc_beh_flag_p1 = False
-        self.cyc_beh_flag_p2 = False
 
     def initialize_board(self):
         # initialize an empty list to represent the board
@@ -114,34 +109,6 @@ class Board:
                     flat_state.append(-2 if piece.king else -1)
             
         return flat_state
-    
-    def record_state(self):
-        # record the current state for the current player
-        state = self.get_state_representation()
-        self.history[self.current_player].append(state)
-
-    def is_cyclical_behavior(self, cycle_length=4):
-        # the cycle_length parameter defines how many states should form a cycle
-
-        history = self.history[self.current_player]
-
-        # need a minimum length of history to start checking for cycles
-        if len(history) < cycle_length * 2:
-            return False
-
-        # extract the last few states for analysis, twice the cycle length
-        recent_history = history[-cycle_length*2:]
-
-        # checking for patterns in the recent history
-        for i in range(cycle_length):
-            # extract part of the sequence that should repeat
-            pattern = recent_history[i:i+cycle_length]
-
-            # check if this pattern repeats immediately after
-            if pattern == recent_history[i+cycle_length:i+cycle_length*2]:
-                return True
-
-        return False
 
     @staticmethod
     def load_legal_moves():
@@ -304,20 +271,6 @@ class Board:
             # penalty for an illegal move
             reward -= 100
 
-        # record state after making a move
-        self.record_state()
-
-        # Check for cyclical behavior
-        if self.is_cyclical_behavior():
-            reward -= 100
-            self.reward_count[self.current_player] += reward
-            print(f"Cyclical behavior detected for player {self.current_player}")
-            if self.current_player == 1:
-                self.cyc_beh_flag_p1 = True
-            else:
-                self.cyc_beh_flag_p2 = True
-            return reward
-
         # update the reward count
         self.reward_count[self.current_player] += reward
 
@@ -352,11 +305,6 @@ class Board:
         self.current_player = 3 - self.current_player
 
     def is_game_over(self):
-    # check if one of the players has won
-        if self.cyc_beh_flag_p1 or self.cyc_beh_flag_p2:
-            # game ends if either player engaged in cyclical behavior
-            return True
-
         if self.pieces_player_1 == 0 or self.pieces_player_2 == 0:
             # game ends if either player has no pieces left
             return True

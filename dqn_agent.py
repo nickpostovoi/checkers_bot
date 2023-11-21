@@ -39,9 +39,9 @@ class DQN_agent:
         # balances exploration (trying new actions) and exploitation (using the best-known action)
         self.epsilon = initial_epsilon
         # the minimum value that epsilon can reach during the training process
-        self.epsilon_min = 1
+        self.epsilon_min = 0.05
         # rate at which the epsilon value decreases over time
-        self.epsilon_decay = 1
+        self.epsilon_decay = 0.995
         # rate at which the weights in the neural network are adjusted during each training iteration
         self.learning_rate = 0.001
         
@@ -105,35 +105,35 @@ class DQN_agent:
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, min(len(self.memory), batch_size))
 
-        # Separate the minibatch into states, actions, rewards, next_states, and dones
+        # separate the minibatch into states, actions, rewards, next_states, and dones
         states = np.array([x[0] for x in minibatch])
         actions = np.array([x[1] for x in minibatch])
         rewards = np.array([x[2] for x in minibatch])
         next_states = np.array([x[3] for x in minibatch])
         dones = np.array([x[4] for x in minibatch])
 
-        # Reshape states and next_states for batch processing
+        # reshape states and next_states for batch processing
         states = np.reshape(states, [len(minibatch), self.state_size])
         next_states = np.reshape(next_states, [len(minibatch), self.state_size])
 
-        # Batch prediction for current and next states
+        # batch prediction for current and next states
         current_q_values = self.model.predict(states, verbose=0)
         next_q_values = self.target_model.predict(next_states, verbose=0)
 
-        # Update Q values for the actions taken
+        # update Q values for the actions taken
         targets = rewards + self.gamma * np.amax(next_q_values, axis=1) * (1 - dones)
         target_f = current_q_values
         for i in range(len(minibatch)):
             target_f[i][actions[i]] = targets[i]
 
-        # Batch training
+        # batch training
         self.model.fit(states, target_f, epochs=1, verbose=0)
 
-        # Epsilon decay
+        # epsilon decay
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
-        # Update target model periodically
+        # update target model periodically
         self.update_counter += 1
         if self.update_counter % 100 == 0:
             self.update_target_model()
