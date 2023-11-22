@@ -8,21 +8,21 @@ from keras import backend as K
 # initialize the game environment and the DQN agent
 checkers_game = Board()
 state_size = len(checkers_game.get_state_representation())
-agent = DQN_agent(state_size, 340, initial_epsilon=1)
+agent = DQN_agent(state_size, 340, initial_epsilon=0.15)
 
-# weights_path = f"model_checkpoints/checkers_model_episode_{last_episode}.h5"
+weights_path = f"model_checkpoints/checkers_model_episode_{1070000} EPS 1 FINISHED.h5"
 
-# # load the model weights and memory if the files exist
-# try:
-#     agent.load(weights_path)
-#     print("Loaded model weights.")
-# except Exception as e:
-#     print(f"Error loading model weights: {e}")
+# load the model weights and memory if the files exist
+try:
+    agent.load(weights_path)
+    print("Loaded model weights.")
+except Exception as e:
+    print(f"Error loading model weights: {e}")
 
-episodes = 5000000
+episodes = 1000000
 batch_size = 5000
-save_interval = 10000
-replay_interval = 100
+save_interval = 100
+replay_interval = 25
 
 # initialize a list to store cumulative rewards after each episode
 cumulative_rewards_p1 = []
@@ -71,10 +71,12 @@ for episode in range(episodes):
     if episode % replay_interval == 0 and len(agent.memory_p1) > batch_size and len(agent.memory_p2) > batch_size:
         agent.replay(1, batch_size)
         agent.replay(2, batch_size)
+        K.clear_session()
         gc.collect()
         
     # periodic saving of weights and memory
     if episode % save_interval == 0 or episode == episodes - 1:
-        agent.save(f"model_checkpoints/checkers_model_episode_{episode}.h5")
+        agent.save(f"model_checkpoints/checkers_model_episode_{episode+1070000}.h5")
         print(f"SW {episode}")
         K.clear_session()
+        gc.collect()
