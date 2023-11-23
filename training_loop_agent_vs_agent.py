@@ -8,9 +8,9 @@ from keras import backend as K
 # initialize the game environment and the DQN agent
 checkers_game = Board()
 state_size = len(checkers_game.get_state_representation())
-agent = DQN_agent(state_size, 340, initial_epsilon=0.15)
+agent = DQN_agent(state_size, 340, initial_epsilon=0.05)
 
-weights_path = f"model_checkpoints/checkers_model_episode_{1070000} EPS 1 FINISHED.h5"
+weights_path = "model_checkpoints/checkers_model_episode_1072500 EPS 0.15 FINISHED.h5"
 
 # load the model weights and memory if the files exist
 try:
@@ -32,6 +32,7 @@ for episode in range(episodes):
     checkers_game = Board()
     previous_reward_p1 = 0
     previous_reward_p2 = 0
+    moves_count = 0
 
     while not checkers_game.is_game_over():
         state = np.array(checkers_game.get_state_representation())
@@ -58,6 +59,8 @@ for episode in range(episodes):
         # remember the experience for player 1
         agent.remember(checkers_game.current_player, state, action, reward, next_state, done)
 
+        moves_count += 1
+
     # update cumulative rewards
     total_cumulative_reward_p1 = checkers_game.reward_count[1]
     total_cumulative_reward_p2 = checkers_game.reward_count[2]
@@ -65,7 +68,7 @@ for episode in range(episodes):
     # cumulative_rewards_p1.append(total_cumulative_reward_p1)
     # cumulative_rewards_p2.append(total_cumulative_reward_p2)
 
-    print(f"E{episode}. P1: {np.round(total_cumulative_reward_p1, 1)}, P2: {np.round(total_cumulative_reward_p2, 1)}")
+    print(f"E{episode}. P1: {np.round(total_cumulative_reward_p1, 1)}, P2: {np.round(total_cumulative_reward_p2, 1)}, M: {moves_count}")
 
     # periodic replay experiences
     if episode % replay_interval == 0 and len(agent.memory_p1) > batch_size and len(agent.memory_p2) > batch_size:
@@ -73,10 +76,10 @@ for episode in range(episodes):
         agent.replay(2, batch_size)
         K.clear_session()
         gc.collect()
-        
+
     # periodic saving of weights and memory
     if episode % save_interval == 0 or episode == episodes - 1:
-        agent.save(f"model_checkpoints/checkers_model_episode_{episode+1070000}.h5")
+        agent.save(f"model_checkpoints/checkers_model_episode_{episode+1072500}.h5")
         print(f"SW {episode}")
         K.clear_session()
         gc.collect()

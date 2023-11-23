@@ -48,14 +48,14 @@ class Board:
                 # 1. the piece should be on rows 0, 1 or 2
                 # 2. the piece have to be on dark squares 
                 # the dark squares are those where the sum of the row and column indices is odd
-                if row in [0, 1, 2] and (row + col) % 2 == 1:
+                if row in [0, 1, 2] and (row + col) % 2 == 0:
                     #add a P1 piece to the row
                     board_row.append(Piece(1))
 
                 # check if the square should have a P2 piece: 
                 # 1. the piece should be on rows 5, 6 or 7
                 # 2. the piece have to be on dark squares 
-                elif row in [5, 6, 7] and (row + col) % 2 == 1:
+                elif row in [5, 6, 7] and (row + col) % 2 == 0:
                     #add a P2 piece to the row
                     board_row.append(Piece(2))
 

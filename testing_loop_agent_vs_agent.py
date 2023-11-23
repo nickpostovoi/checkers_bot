@@ -9,9 +9,9 @@ checkers_game = Board()
 state_size = len(checkers_game.get_state_representation())
 action_size = 340
 agent1 = DQN_agent(state_size, action_size, initial_epsilon=0.05)
-agent1.load('model_checkpoints/checkers_model_episode_1070000 EPS 1 FINISHED.h5')
+agent1.load('model_checkpoints/checkers_model_episode_1073600 EPS 0.05 FINISHED.h5')
 agent2 = DQN_agent(state_size, action_size, initial_epsilon=0.05)
-agent2.load('model_checkpoints/checkers_model_episode_1072500.h5')
+agent2.load('model_checkpoints/checkers_model_episode_1073600 EPS 0.05 FINISHED.h5')
 
 episodes = 100
 agent_1_wins = 0

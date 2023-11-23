@@ -11,7 +11,7 @@ for game in range(100000):
         legal_moves = board.get_legal_moves()
         move = random.choice(legal_moves)
 
-        # Add the legal moves to the set
+        # add the legal moves to the set
         for legal_move in legal_moves:
             all_legal_moves.add(legal_move)
 

@@ -20,6 +20,9 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l2
+from tensorflow.keras import mixed_precision
+
+mixed_precision.set_global_policy('mixed_float16')
 
 class DQN_agent:
     def __init__(self, state_size, action_size, initial_epsilon=1.0):
@@ -55,6 +58,9 @@ class DQN_agent:
         self.update_counter = 0
 
     def _build_model(self):
+        policy = mixed_precision.Policy('mixed_float16')
+        mixed_precision.set_global_policy(policy)
+
         # compiles a neural net for DQ model
         model = Sequential()
         model.add(Dense(512, input_dim=self.state_size, activation='relu', kernel_regularizer=l2(0.01)))
