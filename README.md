@@ -1,5 +1,7 @@
 # Deep Q-Learning with CNN for Checkers
 
+!!! Project is in development !!!
+
 ## Introduction
 
 ## Table of Contents
