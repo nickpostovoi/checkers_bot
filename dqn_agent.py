@@ -63,13 +63,13 @@ class DQN_agent:
         model.add(Conv2D(36, (3, 3), activation='relu', input_shape=self.state_size))
         model.add(Conv2D(72, (2, 2), activation='relu'))
         
-        # After the convolutional and flattening layers in your model...
+        # flatten output of the convolutional layers
         flattened = model.add(Flatten())
 
-        # Additional game-specific features
+        # input additional features describing the board state
         additional_features = Input(shape=(num_features,))
 
-        # Concatenate the additional features
+        # concatenate features to the flattened convolutional layer output
         combined = concatenate([flattened, additional_features])
 
         # dense layers for further processing
