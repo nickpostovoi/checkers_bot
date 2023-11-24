@@ -1,7 +1,6 @@
 # Deep Q-Learning with CNN for Checkers
 
 ## Introduction
-Brief description of the project, its purpose, and what it achieves.
 
 ## Table of Contents
 - [Introduction](#introduction)
