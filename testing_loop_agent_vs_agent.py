@@ -8,10 +8,10 @@ from dqn_agent import DQN_agent
 checkers_game = Board()
 state_size = len(checkers_game.get_state_representation())
 action_size = 340
-agent1 = DQN_agent(state_size, action_size, initial_epsilon=0.05)
-agent1.load('model_checkpoints/checkers_model_episode_1073600 EPS 0.05 FINISHED.h5')
-agent2 = DQN_agent(state_size, action_size, initial_epsilon=0.05)
-agent2.load('model_checkpoints/checkers_model_episode_1073600 EPS 0.05 FINISHED.h5')
+agent1 = DQN_agent(action_size, initial_epsilon=0.05)
+agent1.load('model_checkpoints/checkers_model_tf_episode_1999999.h5')
+agent2 = DQN_agent(action_size, initial_epsilon=0.05)
+agent2.load('model_checkpoints/checkers_model_tf_episode_1700000.h5')
 
 episodes = 100
 agent_1_wins = 0
@@ -22,7 +22,6 @@ no_capture_moves = 0
 for episode in range(episodes):
     checkers_game = Board()
     state = np.array(checkers_game.get_state_representation())
-    state = np.reshape(state, [1, state_size])
     no_capture_moves = 0
     previous_pieces_p1 = checkers_game.pieces_player_1
     previous_pieces_p2 = checkers_game.pieces_player_2
@@ -44,8 +43,6 @@ for episode in range(episodes):
             break
 
         state = np.array(checkers_game.get_state_representation())
-        state = np.reshape(state, [1, state_size])
-
         # check for a draw due to no progress made
         if checkers_game.pieces_player_1 == previous_pieces_p1 and checkers_game.pieces_player_2 == previous_pieces_p2:
             no_capture_moves += 1

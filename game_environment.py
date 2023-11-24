@@ -86,29 +86,27 @@ class Board:
             print(row_str)
 
     def get_state_representation(self, player=None):
-        #if no player specified, use the current player
+        # if no player specified, use the current player
         if player is None:
             player = self.current_player
-        
-        # flatten the board into a 1D array
-        flat_state = []
 
-        # encode the board representation
-        # 0 for empty 
-        # 1 for own piece
-        # 2 for own king
-        # -1 for opponents piece
-        # -2 for opponents king
-        for row in self.state[::-1] if player == 2 else self.state:
-            for piece in row[::-1] if player == 2 else row:
-                if piece is None:
-                    flat_state.append(0)
-                elif piece.player == player:
-                    flat_state.append(2 if piece.king else 1)
-                else:
-                    flat_state.append(-2 if piece.king else -1)
-            
-        return flat_state
+        # initialize a 3D array to represent the board, 8x8x4
+        board_state = [[[0]*4 for _ in range(8)] for _ in range(8)]
+
+        # encode the board representation using one-hot encoding
+        # channel 0 for own piece
+        # channel 1 for own king
+        # channel 2 for opponents piece
+        # channel 3 for opponents king
+        for i, row in enumerate(self.state[::-1] if player == 2 else self.state):
+            for j, piece in enumerate(row[::-1] if player == 2 else row):
+                if piece is not None:
+                    if piece.player == player:
+                        board_state[i][j][0 if not piece.king else 1] = 1  # own piece or king
+                    else:
+                        board_state[i][j][2 if not piece.king else 3] = 1  # opponent piece or king
+                
+        return board_state
 
     @staticmethod
     def load_legal_moves():
@@ -236,17 +234,17 @@ class Board:
                 capture_made = True
 
                 # assign a reward for capturing an opponent piece
-                current_player_balance += 10
+                current_player_balance += 1
                 # assign a penalty to the opponent for losing a piece
-                opponent_player_balance -= 5
+                opponent_player_balance -= 0.5
             
             # check if piece has to be promoted to a king
             if (end_row == 0 and piece.player == 2) or (end_row == 7 and piece.player == 1):
                 # promote a piece for a king
                 piece.make_king()
                 #assign a reward for promoting to a king
-                current_player_balance += 5
-                opponent_player_balance -= 2
+                current_player_balance += 0.5
+                opponent_player_balance -= 0.2
 
             # check for additional captures
             if capture_made:
@@ -257,8 +255,8 @@ class Board:
                     additional_jumps = [m for m in all_legal_moves if m[0] == 7 - end_row and m[1] == end_col and abs(m[2] - (7-end_row)) == 2]
                 if additional_jumps:
                     # assign an additional reward for a move leading to more captures
-                    current_player_balance += 5
-                    opponent_player_balance -= 5
+                    current_player_balance += 0.5
+                    opponent_player_balance -= 0.5
                     
                     # update the reward count
                     self.reward_count[self.current_player] += current_player_balance
@@ -268,11 +266,11 @@ class Board:
             
             # small penalty for a normal move without immediate benefit
             if current_player_balance == 0:
-                current_player_balance -= 0.1
+                current_player_balance -= 0.05
 
         else:
             # penalty for an illegal move
-            current_player_balance = -100
+            current_player_balance = -1
 
         # update the reward count
         self.reward_count[self.current_player] += current_player_balance
@@ -281,15 +279,15 @@ class Board:
         # check if game is over and assign additional rewards/penalties
         if self.is_game_over():
             if self.pieces_player_1 == 0:
-                self.reward_count[2] += 200
-                self.reward_count[1] -= 200
+                self.reward_count[2] += 10
+                self.reward_count[1] -= 10
             elif self.pieces_player_2 == 0:
-                self.reward_count[1] += 200
-                self.reward_count[2] -= 200
+                self.reward_count[1] += 10
+                self.reward_count[2] -= 10
             elif not self.get_legal_moves():
                 # stalemate penalty
-                self.reward_count[1] -= 10
-                self.reward_count[2] -= 10
+                self.reward_count[1] -= 1
+                self.reward_count[2] -= 1
         else:
             # switch player turn if game is not over
             self.switch_player_turn()

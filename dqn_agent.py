@@ -17,24 +17,23 @@ if gpus:
         print(e)
 
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Conv2D, Flatten, Dense, Dropout
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras import mixed_precision
 
 mixed_precision.set_global_policy('mixed_float16')
 
 class DQN_agent:
-    def __init__(self, state_size, action_size, initial_epsilon=1.0):
+    def __init__(self, action_size, initial_epsilon=1.0):
         # initialize the agent
         
         # state representation from get_state_representation()
-        self.state_size = state_size
+        self.state_size = (8, 8, 4)
         # possible actions from get_legal_moves()
         self.action_size = action_size
         # a double-ended queue to store experiences
-        self.memory_p1 = deque(maxlen=20000)
-        self.memory_p2 = deque(maxlen=20000)
+        self.memory_p1 = deque(maxlen=100000)
+        self.memory_p2 = deque(maxlen=100000)
         # discount rate (determines the importance of future rewards)
         # lower rate makes agent more short-sighted
         # higher rate makes agent value future rewards more significantly (far-sighted)
@@ -58,19 +57,28 @@ class DQN_agent:
         self.update_counter = 0
 
     def _build_model(self):
-        policy = mixed_precision.Policy('mixed_float16')
-        mixed_precision.set_global_policy(policy)
-
-        # compiles a neural net for DQ model
         model = Sequential()
-        model.add(Dense(512, input_dim=self.state_size, activation='relu', kernel_regularizer=l2(0.01)))
-        model.add(Dense(1024, activation='relu', kernel_regularizer=l2(0.01)))
-        model.add(Dense(2048, activation='relu', kernel_regularizer=l2(0.01)))
-        model.add(Dense(1024, activation='relu', kernel_regularizer=l2(0.01)))
+
+        # convolutional layers
+        model.add(Conv2D(36, (3, 3), activation='relu', input_shape=(8, 8, 4)))
+        model.add(Conv2D(72, (2, 2), activation='relu'))
+        
+        # flattening the convolutional layer's output to feed it into dense layers
+        model.add(Flatten())    
+
+        # dense layers for further processing
+        model.add(Dense(1024, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(512, activation='relu'))
+
+        # output layer with 340 neurons (one for each possible move)
         model.add(Dense(340, activation='linear'))
-        model.compile(loss='mse', optimizer=Adam(learning_rate=self.learning_rate))
+
+        # compile the model
+        model.compile(optimizer='adam', loss='mean_squared_error')
+
         return model
-    
+        
     def update_target_model(self):
         # method to update the target model
         self.target_model.set_weights(self.model.get_weights())
@@ -98,7 +106,7 @@ class DQN_agent:
         # deciding which action the agent should take in a given state
 
         # reshape state to match the model input shape
-        state = np.reshape(state, [1, self.state_size])
+        state = np.reshape(state, [1, *self.state_size])
 
         # checks if the agent should take a random action based on the current value of exploration rate
         if np.random.rand() <= self.epsilon:
@@ -133,8 +141,8 @@ class DQN_agent:
         dones = np.array([x[4] for x in minibatch])
 
         # reshape states and next_states for batch processing
-        states = np.reshape(states, [len(minibatch), self.state_size])
-        next_states = np.reshape(next_states, [len(minibatch), self.state_size])
+        states = np.reshape(states, [len(minibatch), *self.state_size])
+        next_states = np.reshape(next_states, [len(minibatch), *self.state_size])
 
         # batch prediction for current and next states
         current_q_values = self.model.predict(states, verbose=0)
@@ -147,7 +155,7 @@ class DQN_agent:
             target_f[i][actions[i]] = targets[i]
 
         # batch training
-        self.model.fit(states, target_f, epochs=1, verbose=0)
+        self.model.fit(states, target_f, epochs=1, batch_size = 100, verbose=1)
 
         # epsilon decay
         if self.epsilon > self.epsilon_min:
@@ -155,7 +163,7 @@ class DQN_agent:
 
         # update target model periodically
         self.update_counter += 1
-        if self.update_counter % 20 == 0:
+        if self.update_counter % 30 == 0:
             self.update_target_model()
     
     def load(self, name):
