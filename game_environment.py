@@ -90,23 +90,89 @@ class Board:
         if player is None:
             player = self.current_player
 
-        # initialize a 3D array to represent the board, 8x8x4
-        board_state = [[[0]*4 for _ in range(8)] for _ in range(8)]
+        # initialize a 3D array to represent the board, 9x9x5
+        board_state = [[[0]*5 for _ in range(9)] for _ in range(9)]
 
         # encode the board representation using one-hot encoding
         # channel 0 for own piece
         # channel 1 for own king
         # channel 2 for opponents piece
         # channel 3 for opponents king
-        for i, row in enumerate(self.state[::-1] if player == 2 else self.state):
-            for j, piece in enumerate(row[::-1] if player == 2 else row):
-                if piece is not None:
-                    if piece.player == player:
-                        board_state[i][j][0 if not piece.king else 1] = 1  # own piece or king
-                    else:
-                        board_state[i][j][2 if not piece.king else 3] = 1  # opponent piece or king
-                
+        # channel 4 for borders
+        for i in range(9):
+            for j in range(9):
+                # Set borders in the 5th channel
+                if i == 0 or i == 8 or j == 0 or j == 8:
+                    board_state[i][j][4] = 1
+                else:
+                    # adjust indices for the 8x8 board within the 9x9 representation
+                    adjusted_i = i - 1
+                    adjusted_j = j - 1
+                    piece = self.state[::-1][adjusted_i][adjusted_j] if player == 2 else self.state[adjusted_i][adjusted_j]
+                    if piece is not None:
+                        if piece.player == player:
+                            board_state[i][j][0 if not piece.king else 1] = 1  # own piece or king
+                        else:
+                            board_state[i][j][2 if not piece.king else 3] = 1  # opponent piece or king
+
         return board_state
+    
+    def calculate_vertical_center_of_mass(self, player):
+        total_height = 0
+        total_pieces = 0
+
+        for row_index, row in enumerate(self.state):
+            for piece in row:
+                if piece and piece.player == player:
+                    total_height += row_index
+                    total_pieces += 1
+
+        # avoid division by zero if there are no pieces
+        if total_pieces == 0:
+            return 0
+
+        # calculate and return the vertical center of mass
+        return total_height / total_pieces
+    
+    def calculate_additional_features(self, player=None):
+        # if no player specified, use the current player
+        if player is None:
+            player = self.current_player
+
+        own_uncrowned, opponent_uncrowned, own_kings, opponent_kings, own_edge_pieces = 0, 0, 0, 0, 0
+
+        # iterate over the board to count pieces and their positions
+        for row_index, row in enumerate(self.state):
+            for col_index, piece in enumerate(row):
+                if piece:
+                    if piece.player == player:
+                        if piece.king:
+                            own_kings += 1
+                        else:
+                            own_uncrowned += 1
+                        if col_index in [0, 7]:
+                            own_edge_pieces += 1
+                    else:
+                        if piece.king:
+                            opponent_kings += 1
+                        else:
+                            opponent_uncrowned += 1
+
+        # calculate the vertical centers of mass
+        own_center_of_mass = self.calculate_vertical_center_of_mass(player)
+        opponent_center_of_mass = self.calculate_vertical_center_of_mass(3 - player)
+
+        features = [
+            own_uncrowned,
+            opponent_uncrowned,
+            own_kings,
+            opponent_kings,
+            own_edge_pieces,
+            own_center_of_mass,
+            opponent_center_of_mass
+        ]
+
+        return features
 
     @staticmethod
     def load_legal_moves():
@@ -262,7 +328,7 @@ class Board:
                     self.reward_count[self.current_player] += current_player_balance
                     self.reward_count[3 - self.current_player] += opponent_player_balance
                     
-                    return  # do not switch player turn since another jump is possible
+                    return 5 # do not switch player turn since another jump is possible
             
             # small penalty for a normal move without immediate benefit
             if current_player_balance == 0:
@@ -279,11 +345,11 @@ class Board:
         # check if game is over and assign additional rewards/penalties
         if self.is_game_over():
             if self.pieces_player_1 == 0:
-                self.reward_count[2] += 10
-                self.reward_count[1] -= 10
+                self.reward_count[2] += 50
+                self.reward_count[1] -= 50
             elif self.pieces_player_2 == 0:
-                self.reward_count[1] += 10
-                self.reward_count[2] -= 10
+                self.reward_count[1] += 50
+                self.reward_count[2] -= 50
             elif not self.get_legal_moves():
                 # stalemate penalty
                 self.reward_count[1] -= 1

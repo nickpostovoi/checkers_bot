@@ -29,6 +29,7 @@ cumulative_rewards_p1 = []
 cumulative_rewards_p2 = []
  
 for episode in range(episodes):
+    
     checkers_game = Board()
     previous_reward_p1 = 0
     previous_reward_p2 = 0
@@ -78,7 +79,7 @@ for episode in range(episodes):
 
     # periodic saving of weights and memory
     if episode % save_interval == 0 or episode == episodes - 1:
-        agent.save(f"model_checkpoints/checkers_model_tf_episode_{episode}.h5")
+        agent.save(f"model_checkpoints/checkers_model_cnn_9x9_episode_{episode}.h5")
         print(f"SW {episode}")
         K.clear_session()
         gc.collect()

@@ -8,7 +8,8 @@ from dqn_agent import DQN_agent
 checkers_game = Board()
 action_size = 340
 agent = DQN_agent(action_size, initial_epsilon=0)
-agent.load('model_checkpoints/checkers_model_tf_episode_1700000.h5')
+# agent.load('model_checkpoints/checkers_model_cnn_9x9_episode_255000.h5')
+
 
 # this command takes an action using the agent
 

@@ -28,12 +28,12 @@ class DQN_agent:
         # initialize the agent
         
         # state representation from get_state_representation()
-        self.state_size = (8, 8, 4)
+        self.state_size = (9, 9, 5)
         # possible actions from get_legal_moves()
         self.action_size = action_size
         # a double-ended queue to store experiences
-        self.memory_p1 = deque(maxlen=100000)
-        self.memory_p2 = deque(maxlen=100000)
+        self.memory_p1 = deque(maxlen=500000)
+        self.memory_p2 = deque(maxlen=500000)
         # discount rate (determines the importance of future rewards)
         # lower rate makes agent more short-sighted
         # higher rate makes agent value future rewards more significantly (far-sighted)
@@ -60,16 +60,22 @@ class DQN_agent:
         model = Sequential()
 
         # convolutional layers
-        model.add(Conv2D(36, (3, 3), activation='relu', input_shape=(8, 8, 4)))
+        model.add(Conv2D(36, (3, 3), activation='relu', input_shape=self.state_size))
         model.add(Conv2D(72, (2, 2), activation='relu'))
         
-        # flattening the convolutional layer's output to feed it into dense layers
-        model.add(Flatten())    
+        # After the convolutional and flattening layers in your model...
+        flattened = model.add(Flatten())
+
+        # Additional game-specific features
+        additional_features = Input(shape=(num_features,))
+
+        # Concatenate the additional features
+        combined = concatenate([flattened, additional_features])
 
         # dense layers for further processing
-        model.add(Dense(1024, activation='relu'))
+        model.add(Dense(2048, activation='relu'))
         model.add(Dropout(0.2))
-        model.add(Dense(512, activation='relu'))
+        model.add(Dense(1024, activation='relu'))
 
         # output layer with 340 neurons (one for each possible move)
         model.add(Dense(340, activation='linear'))
