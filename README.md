@@ -16,7 +16,6 @@ Brief description of the project, its purpose, and what it achieves.
   - [dqn_agent.py](#dqn_agentpy)
   - [training_loop_warmup_parallelized.py](#training_loop_warmup_parallelizedpy)
   - [record_legal_moves.py](#record_legal_movespy)
-- [Contact](#contact)
 
 ## Technologies Used
 
