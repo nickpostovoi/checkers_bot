@@ -90,33 +90,25 @@ class Board:
         if player is None:
             player = self.current_player
 
-        # initialize a 3D array to represent the board, 9x9x5
-        board_state = [[[0]*5 for _ in range(9)] for _ in range(9)]
+        # initialize a 3D array to represent the board, 8x8x4
+        board_state = [[[0]*4 for _ in range(8)] for _ in range(8)]
 
         # encode the board representation using one-hot encoding
         # channel 0 for own piece
         # channel 1 for own king
         # channel 2 for opponents piece
         # channel 3 for opponents king
-        # channel 4 for borders
-        for i in range(9):
-            for j in range(9):
-                # Set borders in the 5th channel
-                if i == 0 or i == 8 or j == 0 or j == 8:
-                    board_state[i][j][4] = 1
-                else:
-                    # adjust indices for the 8x8 board within the 9x9 representation
-                    adjusted_i = i - 1
-                    adjusted_j = j - 1
-                    piece = self.state[::-1][adjusted_i][adjusted_j] if player == 2 else self.state[adjusted_i][adjusted_j]
-                    if piece is not None:
-                        if piece.player == player:
-                            board_state[i][j][0 if not piece.king else 1] = 1  # own piece or king
-                        else:
-                            board_state[i][j][2 if not piece.king else 3] = 1  # opponent piece or king
+        for i in range(8):
+            for j in range(8):
+                piece = self.state[::-1][i][j] if player == 2 else self.state[i][j]
+                if piece is not None:
+                    if piece.player == player:
+                        board_state[i][j][0 if not piece.king else 1] = 1  # own piece or king
+                    else:
+                        board_state[i][j][2 if not piece.king else 3] = 1  # opponent piece or king
 
         return board_state
-    
+
     def calculate_vertical_center_of_mass(self, player):
         total_height = 0
         total_pieces = 0
@@ -381,3 +373,7 @@ class Board:
         
         # if none of the above conditions are met, the game continues
         return False
+
+if __name__ == "__main__":
+    checkers_game = Board()
+    checkers_game.print_board()
