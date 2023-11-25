@@ -1,4 +1,7 @@
 import numpy as np
+from collections import deque
+
+import config as cfg
 
 # defining the piece class
 class Piece:
@@ -31,6 +34,10 @@ class Board:
         self.moves_mapping = self.load_legal_moves()
         # create reverse mapping from indices to moves
         self.reverse_moves_mapping = {index: move for move, index in self.moves_mapping.items()}
+        # create state history buffers
+        self.state_history = deque(maxlen = cfg.state_history_length)
+        self.features_history = deque(maxlen = cfg.state_history_length)
+        self.update_state_history()
 
     def initialize_board(self):
         # initialize an empty list to represent the board
@@ -85,7 +92,7 @@ class Board:
                 
             print(row_str)
 
-    def get_state_representation(self, player=None):
+    def get_board_representation(self, player=None):
         # if no player specified, use the current player
         if player is None:
             player = self.current_player
@@ -107,7 +114,7 @@ class Board:
                     else:
                         board_state[i][j][2 if not piece.king else 3] = 1  # opponent piece or king
 
-        return board_state
+        return np.array(board_state)
 
     def calculate_vertical_center_of_mass(self, player):
         total_height = 0
@@ -165,6 +172,25 @@ class Board:
         ]
 
         return features
+
+    def update_state_history(self):
+        current_state = self.get_board_representation()
+        current_features = self.calculate_additional_features()
+        self.state_history.appendleft(current_state)
+        self.features_history.appendleft(current_features)
+
+    def get_state_representation(self):
+        # initialize a list to hold current and historical board states
+        all_states = []
+        # get current state and add to the list
+        current_state = self.get_board_representation()
+        all_states.append(current_state)
+        # iterate over the state history and each state to the list
+        for historical_state in list(self.state_history):
+            all_states.append(historical_state)
+        # #if there are fewer than required historical states, pad with zeros
+        # while len(all_states) =< cfg.state_history_length + 1:
+        return all_states
 
     @staticmethod
     def load_legal_moves():
@@ -319,8 +345,10 @@ class Board:
                     # update the reward count
                     self.reward_count[self.current_player] += current_player_balance
                     self.reward_count[3 - self.current_player] += opponent_player_balance
+
+                    self.update_state_history()
                     
-                    return 5 # do not switch player turn since another jump is possible
+                    return # do not switch player turn since another jump is possible
             
             # small penalty for a normal move without immediate benefit
             if current_player_balance == 0:
@@ -347,6 +375,7 @@ class Board:
                 self.reward_count[1] -= 1
                 self.reward_count[2] -= 1
         else:
+            self.update_state_history()
             # switch player turn if game is not over
             self.switch_player_turn()
         
