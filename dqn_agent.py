@@ -66,11 +66,11 @@ class DQN_agent:
         # flatten output of the convolutional layers
         flattened = model.add(Flatten())
 
-        # input additional features describing the board state
-        additional_features = Input(shape=(num_features,))
+        # # input additional features describing the board state
+        # additional_features = Input(shape=(num_features,))
 
-        # concatenate features to the flattened convolutional layer output
-        combined = concatenate([flattened, additional_features])
+        # # concatenate features to the flattened convolutional layer output
+        # combined = concatenate([flattened, additional_features])
 
         # dense layers for further processing
         model.add(Dense(2048, activation='relu'))
